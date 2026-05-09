@@ -85,6 +85,8 @@ export default async function QuestsPage() {
   const streakCount = profile?.streak_count || 0
   // Points for NEXT check-in: base 10 + (current_streak * 2), max 50
   const todayCheckInPoints = Math.min(10 + streakCount * 2, 50)
+  // Points they actually earned today (if already checked in)
+  const pointsEarnedToday = Math.min(10 + (streakCount - 1) * 2, 50)
   const username = profile?.username || user.email?.split("@")[0] || "Player"
 
   const dummyQuests = [
@@ -297,7 +299,9 @@ export default async function QuestsPage() {
                     }`}>
                       {hasCheckedInToday ? "✓ Done" : "Active"}
                     </span>
-                    <span className="text-2xl font-bold text-[#a3e635]">+{todayCheckInPoints} pts</span>
+                    <span className="text-2xl font-bold text-[#a3e635]">
+                      +{hasCheckedInToday ? pointsEarnedToday : todayCheckInPoints} pts
+                    </span>
                   </div>
                   <h3 className="text-2xl xl:text-3xl font-bold text-white mb-3">Daily Check-in</h3>
                   <p className="text-lg xl:text-xl text-[#666666] mb-8 flex-grow leading-relaxed">
