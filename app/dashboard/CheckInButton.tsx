@@ -3,56 +3,102 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { checkIn } from "./actions"
-import { Loader2, Check, Sparkles } from "lucide-react"
+import { CheckCircle2, Loader2 } from "lucide-react"
 
 interface CheckInButtonProps {
   hasCheckedIn: boolean
+  compact?: boolean
+  fullWidth?: boolean
 }
 
-export function CheckInButton({ hasCheckedIn }: CheckInButtonProps) {
-  const [isLoading, setIsLoading] = useState(false)
+export function CheckInButton({ hasCheckedIn, compact, fullWidth }: CheckInButtonProps) {
+  const [loading, setLoading] = useState(false)
   const [checked, setChecked] = useState(hasCheckedIn)
-  const [result, setResult] = useState<{ pointsEarned?: number; newStreak?: number } | null>(null)
+  const [result, setResult] = useState<{
+    pointsEarned: number
+    newStreak: number
+  } | null>(null)
 
   async function performCheckIn() {
-    setIsLoading(true)
-    const checkInResult = await checkIn()
-    setIsLoading(false)
-
-    if (checkInResult.success) {
-      setChecked(true)
-      setResult({ pointsEarned: checkInResult.pointsEarned, newStreak: checkInResult.newStreak })
+    setLoading(true)
+    try {
+      const response = await checkIn()
+      if (response.success && response.pointsEarned !== undefined) {
+        setChecked(true)
+        setResult({
+          pointsEarned: response.pointsEarned,
+          newStreak: response.newStreak || 0,
+        })
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
   if (checked) {
+    if (compact) {
+      return (
+        <div className="text-center">
+          {result && (
+            <p className="text-[#a3e635] font-semibold text-sm mb-1">+{result.pointsEarned} pts!</p>
+          )}
+          <div className="flex items-center justify-center gap-1.5 text-[#888888]">
+            <CheckCircle2 className="h-4 w-4 text-[#a3e635]" />
+            <span className="text-sm">Done for today</span>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#a3e635]/10 border border-[#a3e635]/20 text-[#a3e635] font-medium">
-          <Check className="h-5 w-5" />
-          {result ? (
-            <span>+{result.pointsEarned} pts earned! Streak: {result.newStreak} 🔥</span>
-          ) : (
-            <span>Come back tomorrow ✓</span>
-          )}
+        {result ? (
+          <div className="mb-4">
+            <p className="text-[#a3e635] font-bold text-xl">+{result.pointsEarned} pts earned!</p>
+            <p className="text-sm text-[#888888]">Day {result.newStreak} streak 🔥</p>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-center gap-2 text-[#888888]">
+          <CheckCircle2 className="h-6 w-6 text-[#a3e635]" />
+          <span className="text-lg">Come back tomorrow</span>
         </div>
       </div>
     )
   }
 
+  if (compact) {
+    return (
+      <Button
+        className={`bg-[#a3e635] hover:bg-[#a3e635]/90 text-black font-semibold text-sm h-9 ${fullWidth ? "w-full" : ""}`}
+        onClick={performCheckIn}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            Checking in...
+          </>
+        ) : (
+          "Check In"
+        )}
+      </Button>
+    )
+  }
+
   return (
     <Button
+      size="lg"
+      className="bg-[#a3e635] hover:bg-[#a3e635]/90 text-black font-bold text-lg px-10 py-7 h-auto rounded-xl shadow-[0_0_24px_rgba(163,230,53,0.3)] hover:shadow-[0_0_32px_rgba(163,230,53,0.5)] transition-all"
       onClick={performCheckIn}
-      disabled={isLoading}
-      className="h-14 px-10 bg-[#a3e635] hover:bg-[#a3e635]/90 text-black font-semibold text-lg shadow-[0_0_30px_rgba(163,230,53,0.3)] hover:shadow-[0_0_40px_rgba(163,230,53,0.5)] transition-all"
+      disabled={loading}
     >
-      {isLoading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : (
+      {loading ? (
         <>
-          <Sparkles className="h-5 w-5 mr-2" />
-          Check In Now
+          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+          Checking in...
         </>
+      ) : (
+        "Check In Now"
       )}
     </Button>
   )
