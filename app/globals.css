@@ -162,6 +162,33 @@
   }
 }
 
+@keyframes pulseGlowSky {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(14, 165, 233, 0.55);
+  }
+}
+
+@keyframes pulseGlowOrange {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(249, 115, 22, 0.5);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
 @keyframes progressFill {
   from {
     width: 0%;
@@ -232,6 +259,18 @@
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
+.animate-pulse-glow-sky {
+  animation: pulseGlowSky 2s ease-in-out infinite;
+}
+
+.animate-pulse-glow-orange {
+  animation: pulseGlowOrange 2s ease-in-out infinite;
+}
+
+.animate-blink {
+  animation: blink 1.2s ease-in-out infinite;
+}
+
 .animate-progress-fill {
   animation: progressFill 1s ease-out forwards;
 }
@@ -291,4 +330,33 @@
 
 .quick-action-icon {
   transition: transform 0.2s ease;
+}
+
+@keyframes dragHintArrows {
+  0%,
+  100% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+.animate-drag-hint-arrows {
+  animation: dragHintArrows 1.2s ease-in-out infinite;
+}
+
+.slider-drag-hint-fade {
+  animation: dragHintFade 2s ease forwards;
+}
+
+@keyframes dragHintFade {
+  0%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
