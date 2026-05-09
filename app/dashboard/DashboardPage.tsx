@@ -51,32 +51,47 @@ export async function DashboardPage() {
     .order("points_cost", { ascending: true })
     .limit(3)
 
+  // Get the daily check-in quest ID
+  const { data: dailyQuest } = await supabase
+    .from("quests")
+    .select("id")
+    .eq("type", "daily_checkin")
+    .single()
+
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-  const { data: last7DaysCheckins } = await supabase
-    .from("quest_completions")
-    .select("completed_at")
-    .eq("user_id", user.id)
-    .gte("completed_at", sevenDaysAgo.toISOString())
+  const { data: last7DaysCheckins } = dailyQuest
+    ? await supabase
+        .from("quest_completions")
+        .select("completed_at")
+        .eq("user_id", user.id)
+        .eq("quest_id", dailyQuest.id)
+        .gte("completed_at", sevenDaysAgo.toISOString())
+    : { data: [] }
+
+  const SGT_OFFSET_MS = 8 * 60 * 60 * 1000
+  
+  function getSGTDateKey(date: Date): string {
+    const sgt = new Date(date.getTime() + SGT_OFFSET_MS)
+    return `${sgt.getUTCFullYear()}-${String(sgt.getUTCMonth() + 1).padStart(2, "0")}-${String(sgt.getUTCDate()).padStart(2, "0")}`
+  }
 
   const checkinDates = new Set(
-    (last7DaysCheckins || []).map((c) =>
-      new Date(c.completed_at).toISOString().split("T")[0]
-    )
+    (last7DaysCheckins || []).map((c) => getSGTDateKey(new Date(c.completed_at)))
   )
 
-  const today = new Date()
-  const todayStr = today.toISOString().split("T")[0]
+  const now = new Date()
+  const todayStr = getSGTDateKey(now)
   
   const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (6 - i))
-    const dateStr = date.toISOString().split("T")[0]
+    const date = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000)
+    const dateStr = getSGTDateKey(date)
+    const sgtDate = new Date(date.getTime() + SGT_OFFSET_MS)
     const dayNames = ["S", "M", "T", "W", "T", "F", "S"]
     return {
       date: dateStr,
-      dayLabel: dayNames[date.getDay()],
+      dayLabel: dayNames[sgtDate.getUTCDay()],
       completed: checkinDates.has(dateStr),
       isToday: dateStr === todayStr,
       isPast: dateStr < todayStr,
@@ -101,10 +116,11 @@ export async function DashboardPage() {
     .limit(1)
     .single()
 
-  const lastCheckin = profile?.last_checkin_at
-    ? new Date(profile.last_checkin_at).toISOString().split("T")[0]
+  const lastCheckinDate = profile?.last_checkin_at
+    ? new Date(profile.last_checkin_at)
     : null
-  const hasCheckedInToday = lastCheckin === todayStr
+  const lastCheckinSGT = lastCheckinDate ? getSGTDateKey(lastCheckinDate) : null
+  const hasCheckedInToday = lastCheckinSGT === todayStr
 
   const username = profile?.username || user.email?.split("@")[0] || "Gamer"
   const firstName = username.split(/[._-]/)[0]
@@ -113,8 +129,10 @@ export async function DashboardPage() {
   const currentLevel = Math.floor(pointsBalance / 500) + 1
 
   const streakCount = profile?.streak_count || 0
-  const streakBonus = streakCount > 0 ? Math.min(streakCount, 7) * 2 : 0
-  const todayCheckInPoints = 10 + streakBonus
+  // Points for NEXT check-in: base 10 + (current_streak * 2), max 50
+  const todayCheckInPoints = Math.min(10 + streakCount * 2, 50)
+  // Points they actually earned today (if already checked in)
+  const pointsEarnedToday = Math.min(10 + (streakCount - 1) * 2, 50)
 
   const getStreakMessage = () => {
     if (streakCount >= 7) {
@@ -249,7 +267,7 @@ export async function DashboardPage() {
                         Come back tomorrow ✓
                       </p>
                       <p className="text-xl text-[#a3e635] font-semibold">
-                        +{todayCheckInPoints} pts earned today
+                        +{pointsEarnedToday} pts earned today
                       </p>
                     </>
                   )}

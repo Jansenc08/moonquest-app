@@ -8,10 +8,18 @@ export function CountdownTimer() {
   useEffect(() => {
     function calculateTimeLeft() {
       const now = new Date()
-      const midnight = new Date()
-      midnight.setHours(24, 0, 0, 0)
+      const SGT_OFFSET_MS = 8 * 60 * 60 * 1000
+      const nowSGT = new Date(now.getTime() + SGT_OFFSET_MS)
       
-      const diff = midnight.getTime() - now.getTime()
+      // Next midnight in SGT (subtract offset to convert back to UTC timestamp)
+      const midnightSGT = new Date(Date.UTC(
+        nowSGT.getUTCFullYear(),
+        nowSGT.getUTCMonth(),
+        nowSGT.getUTCDate() + 1,
+        0, 0, 0, 0
+      ) - SGT_OFFSET_MS)
+      
+      const diff = midnightSGT.getTime() - now.getTime()
       
       const hours = Math.floor(diff / (1000 * 60 * 60))
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))

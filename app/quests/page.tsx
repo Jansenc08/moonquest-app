@@ -42,33 +42,49 @@ export default async function QuestsPage() {
     .select("*")
     .eq("is_active", true)
 
+  // Get the daily check-in quest ID
+  const { data: dailyQuest } = await supabase
+    .from("quests")
+    .select("id")
+    .eq("type", "daily_checkin")
+    .single()
+
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-  const { data: last7DaysCheckins } = await supabase
-    .from("quest_completions")
-    .select("completed_at")
-    .eq("user_id", user.id)
-    .gte("completed_at", sevenDaysAgo.toISOString())
+  const { data: last7DaysCheckins } = dailyQuest
+    ? await supabase
+        .from("quest_completions")
+        .select("completed_at")
+        .eq("user_id", user.id)
+        .eq("quest_id", dailyQuest.id)
+        .gte("completed_at", sevenDaysAgo.toISOString())
+    : { data: [] }
+
+  const SGT_OFFSET_MS = 8 * 60 * 60 * 1000
+  
+  function getSGTDateKey(date: Date): string {
+    const sgt = new Date(date.getTime() + SGT_OFFSET_MS)
+    return `${sgt.getUTCFullYear()}-${String(sgt.getUTCMonth() + 1).padStart(2, "0")}-${String(sgt.getUTCDate()).padStart(2, "0")}`
+  }
 
   const checkinDates = new Set(
-    (last7DaysCheckins || []).map((c) =>
-      new Date(c.completed_at).toISOString().split("T")[0]
-    )
+    (last7DaysCheckins || []).map((c) => getSGTDateKey(new Date(c.completed_at)))
   )
 
-  const today = new Date()
-  const todayStr = today.toISOString().split("T")[0]
+  const now = new Date()
+  const todayStr = getSGTDateKey(now)
 
-  const lastCheckin = profile?.last_checkin_at
-    ? new Date(profile.last_checkin_at).toISOString().split("T")[0]
+  const lastCheckinDate = profile?.last_checkin_at
+    ? new Date(profile.last_checkin_at)
     : null
-  const hasCheckedInToday = lastCheckin === todayStr
+  const lastCheckinSGT = lastCheckinDate ? getSGTDateKey(lastCheckinDate) : null
+  const hasCheckedInToday = lastCheckinSGT === todayStr
 
   const pointsBalance = profile?.points_balance || 0
   const streakCount = profile?.streak_count || 0
-  const streakBonus = streakCount > 0 ? Math.min(streakCount, 7) * 2 : 0
-  const todayCheckInPoints = 10 + streakBonus
+  // Points for NEXT check-in: base 10 + (current_streak * 2), max 50
+  const todayCheckInPoints = Math.min(10 + streakCount * 2, 50)
   const username = profile?.username || user.email?.split("@")[0] || "Player"
 
   const dummyQuests = [
