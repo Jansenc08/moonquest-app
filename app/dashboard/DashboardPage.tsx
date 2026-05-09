@@ -427,7 +427,9 @@ export async function DashboardPage() {
                     }`}>
                       {hasCheckedInToday ? "✓ Done" : "Active"}
                     </span>
-                    <span className="text-xl font-bold text-[#a3e635]">+{todayCheckInPoints} pts</span>
+                    <span className="text-xl font-bold text-[#a3e635]">
+                      +{hasCheckedInToday ? pointsEarnedToday : todayCheckInPoints} pts
+                    </span>
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-3">Daily Check-in</h3>
                   <p className="text-lg text-[#666666] mb-6">Check in daily to earn points and build your streak</p>
