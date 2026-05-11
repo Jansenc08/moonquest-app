@@ -50,6 +50,12 @@ interface Player {
   isCurrentUser?: boolean
 }
 
+interface MonthlyMissionData {
+  quest_id: string
+  points_reward: number
+  isClaimed: boolean
+}
+
 interface QuestsPageClientProps {
   initialPointsBalance: number
   initialStreakCount: number
@@ -62,6 +68,7 @@ interface QuestsPageClientProps {
   hasConnectedWallet: boolean
   walletAddress?: string | null
   walletQuestPoints: number
+  monthlyMissionsData: Record<string, MonthlyMissionData>
 }
 
 const dummyQuests: DummyQuest[] = [
@@ -121,12 +128,17 @@ export function QuestsPageClient({
   hasConnectedWallet: initialHasConnectedWallet,
   walletAddress,
   walletQuestPoints,
+  monthlyMissionsData,
 }: QuestsPageClientProps) {
   const [pointsBalance, setPointsBalance] = useState(initialPointsBalance)
   const [hasSpunToday, setHasSpunToday] = useState(initialHasSpunToday)
   const [hasConnectedWallet, setHasConnectedWallet] = useState(initialHasConnectedWallet)
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null)
   const [isQuestModalOpen, setIsQuestModalOpen] = useState(false)
+
+  function handleMissionClaim(result: { new_balance: number }) {
+    setPointsBalance(result.new_balance)
+  }
 
   function handleSpinComplete(result: { new_balance: number }) {
     setPointsBalance(result.new_balance)
@@ -180,7 +192,11 @@ export function QuestsPageClient({
       />
 
       {/* SECTION B — MONTHLY MISSIONS SLIDER */}
-      <MonthlyMissionsSlider streakCount={initialStreakCount} />
+      <MonthlyMissionsSlider 
+        streakCount={initialStreakCount} 
+        monthlyMissionsData={monthlyMissionsData}
+        onMissionClaim={handleMissionClaim}
+      />
 
       {/* SECTION C — LEADERBOARD PREVIEW */}
       <section className="mb-16">

@@ -13,18 +13,28 @@ import {
   Check,
   Rocket,
   ArrowRight,
+  Loader2,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 const CARD_WIDTH_DESKTOP = 500
 const CARD_WIDTH_MOBILE = 200
-const CARD_HEIGHT_DESKTOP = 380
-const CARD_HEIGHT_MOBILE = 280
+const CARD_HEIGHT_DESKTOP = 420
+const CARD_HEIGHT_MOBILE = 320
 const GAP_DESKTOP = 24
 const GAP_MOBILE = 12
 const TOTAL_CARDS = 6
 
+interface MonthlyMissionData {
+  quest_id: string
+  points_reward: number
+  isClaimed: boolean
+}
+
 interface MonthlyMissionsSliderProps {
   streakCount: number
+  monthlyMissionsData: Record<string, MonthlyMissionData>
+  onMissionClaim: (result: { new_balance: number }) => void
 }
 
 interface Mission {
@@ -37,9 +47,14 @@ interface Mission {
   bottomText: string
   progress?: number
   progressMax?: number
+  questId?: string
 }
 
-export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProps) {
+export function MonthlyMissionsSlider({ 
+  streakCount, 
+  monthlyMissionsData,
+  onMissionClaim,
+}: MonthlyMissionsSliderProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   
@@ -68,72 +83,119 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(() => {
+    const initialClaimed = new Set<string>()
+    Object.entries(monthlyMissionsData).forEach(([title, data]) => {
+      if (data.isClaimed) initialClaimed.add(data.quest_id)
+    })
+    return initialClaimed
+  })
+  const [claimingId, setClaimingId] = useState<string | null>(null)
+
   const today = new Date()
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
   const daysRemaining = Math.max(0, Math.ceil((endOfMonth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))
-  
-  const completedMissions = 1
-  const totalMissions = 6
-  const progressPercent = (completedMissions / totalMissions) * 100
 
+  // Helper to get mission data from DB
+  const getMissionData = (title: string) => monthlyMissionsData[title] || null
+
+  // Build missions with DB data
   const missions: Mission[] = [
     {
       id: "first-checkin",
       title: "First Check-in",
       description: "Check in for the first time ever",
-      points: 10,
+      points: getMissionData("First Check-in")?.points_reward || 10,
       status: "completed",
       icon: Flame,
       bottomText: `Completed May ${today.getDate()}`,
+      questId: getMissionData("First Check-in")?.quest_id,
     },
     {
       id: "3-day-streak",
       title: "3-Day Streak",
       description: "Check in 3 days in a row",
-      points: 50,
+      points: getMissionData("3-Day Streak")?.points_reward || 50,
       status: "active",
       icon: CalendarCheck,
       bottomText: `${streakCount} of 3 days`,
       progress: streakCount,
       progressMax: 3,
+      questId: getMissionData("3-Day Streak")?.quest_id,
     },
     {
       id: "refer-friend",
       title: "Refer a Friend",
       description: "Invite someone to join",
-      points: 75,
+      points: getMissionData("Refer a Friend")?.points_reward || 75,
       status: "locked",
       icon: Users,
       bottomText: "Complete mission 2 to unlock",
+      questId: getMissionData("Refer a Friend")?.quest_id,
     },
     {
       id: "7-day-champion",
       title: "7-Day Champion",
       description: "Maintain a 7-day streak",
-      points: 100,
+      points: getMissionData("7-Day Champion")?.points_reward || 100,
       status: "locked",
       icon: Star,
       bottomText: "Unlocks mid-May",
+      questId: getMissionData("7-Day Champion")?.quest_id,
     },
     {
       id: "social-gamer",
       title: "Social Gamer",
       description: "Connect social accounts",
-      points: 150,
+      points: getMissionData("Social Gamer")?.points_reward || 150,
       status: "locked",
       icon: Gamepad2,
       bottomText: "Unlocks May 20",
+      questId: getMissionData("Social Gamer")?.quest_id,
     },
     {
       id: "may-champion",
       title: "May Champion",
       description: "Complete all May missions",
-      points: 500,
+      points: getMissionData("May Champion")?.points_reward || 500,
       status: "finale",
       icon: Trophy,
       bottomText: "Unlocks May 31",
+      questId: getMissionData("May Champion")?.quest_id,
     },
   ]
+
+  // Calculate completed missions count
+  const completedMissions = missions.filter(m => 
+    m.status === "completed" || (m.questId && claimedIds.has(m.questId))
+  ).length
+  const totalMissions = 6
+  const progressPercent = (completedMissions / totalMissions) * 100
+
+  async function handleClaimMission(questId: string) {
+    if (!questId || claimingId) return
+    
+    setClaimingId(questId)
+    try {
+      const response = await fetch('/api/quests/claim-mission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quest_id: questId }),
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        setClaimedIds(prev => new Set([...prev, questId]))
+        onMissionClaim(data)
+      } else if (data.error === 'Already claimed') {
+        setClaimedIds(prev => new Set([...prev, questId]))
+      }
+    } catch (error) {
+      console.error('Failed to claim mission:', error)
+    } finally {
+      setClaimingId(null)
+    }
+  }
 
   const maxTranslate = 0
   const minTranslate = -((CARD_WIDTH + GAP) * (TOTAL_CARDS - 1))
@@ -242,9 +304,23 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
     const statusOpacity = getOpacityForStatus(mission.status, index)
     const Icon = mission.icon
     
-    const isCompleted = mission.status === "completed"
+    const isBaseCompleted = mission.status === "completed"
     const isActive = mission.status === "active"
     const isFinale = mission.status === "finale"
+    
+    // Check if mission is claimed from DB
+    const isClaimed = mission.questId ? claimedIds.has(mission.questId) : false
+    const isClaiming = mission.questId === claimingId
+    
+    // Check if progress is complete (ready to claim)
+    const isProgressComplete = isActive && 
+      mission.progress !== undefined && 
+      mission.progressMax !== undefined && 
+      mission.progress >= mission.progressMax
+    
+    // Final states
+    const isReadyToClaim = isProgressComplete && !isClaimed && mission.questId
+    const isCompleted = isBaseCompleted || isClaimed
     
     let cardBg = "#0f0f0f"
     let borderColor = "#1a1a1a"
@@ -260,6 +336,66 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
       borderColor = "#2a2a3e"
     }
 
+    // Badge rendering helper
+    const renderBadge = () => {
+      if (isCompleted) {
+        return (
+          <span
+            className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
+            style={{ background: "#a3e635", color: "#000" }}
+          >
+            <Check width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
+            {isMobile ? "DONE" : "COMPLETED"}
+          </span>
+        )
+      }
+      if (isReadyToClaim) {
+        return (
+          <span
+            className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
+            style={{ background: "#a3e635", color: "#000" }}
+          >
+            {isMobile ? "CLAIM" : "READY TO CLAIM"}
+          </span>
+        )
+      }
+      if (isActive) {
+        return (
+          <span
+            className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
+            style={{
+              background: "#1a0d00",
+              color: "#f97316",
+              border: "1px solid #f97316",
+            }}
+          >
+            <span className="animate-blink">●</span>
+            ACTIVE
+          </span>
+        )
+      }
+      if (isFinale) {
+        return (
+          <span
+            className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
+            style={{ background: "#1a1a2e", color: "#555" }}
+          >
+            <Crown width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
+            {isMobile ? "FINALE" : "MONTH FINALE"}
+          </span>
+        )
+      }
+      return (
+        <span
+          className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
+          style={{ background: "#1a1a1a", color: "#555" }}
+        >
+          <Lock width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
+          LOCKED
+        </span>
+      )
+    }
+
     return (
       <div
         key={mission.id}
@@ -273,9 +409,9 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
         }}
       >
         <div
-          className={`rounded-2xl flex flex-col ${isActive ? "animate-pulse-glow-orange" : ""}`}
+          className={`rounded-2xl flex flex-col ${isActive && !isReadyToClaim && !isClaimed ? "animate-pulse-glow-orange" : ""}`}
           style={{
-            height: CARD_HEIGHT,
+            minHeight: CARD_HEIGHT,
             padding: isMobile ? "16px" : "32px",
             background: cardBg,
             border: `2px solid ${borderColor}`,
@@ -283,47 +419,11 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
         >
           {/* Badge */}
           <div className={`flex items-center justify-between ${isMobile ? "mb-3" : "mb-5"}`}>
-            {isCompleted ? (
-              <span
-                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
-                style={{ background: "#a3e635", color: "#000" }}
-              >
-                <Check width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
-                {isMobile ? "DONE" : "COMPLETED"}
-              </span>
-            ) : isActive ? (
-              <span
-                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
-                style={{
-                  background: "#1a0d00",
-                  color: "#f97316",
-                  border: "1px solid #f97316",
-                }}
-              >
-                <span className="animate-blink">●</span>
-                ACTIVE
-              </span>
-            ) : isFinale ? (
-              <span
-                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
-                style={{ background: "#1a1a2e", color: "#555" }}
-              >
-                <Crown width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
-                {isMobile ? "FINALE" : "MONTH FINALE"}
-              </span>
-            ) : (
-              <span
-                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
-                style={{ background: "#1a1a1a", color: "#555" }}
-              >
-                <Lock width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
-                LOCKED
-              </span>
-            )}
+            {renderBadge()}
             <span
               className={`font-bold ${isMobile ? "text-xs" : "text-xl"}`}
               style={{
-                color: isCompleted
+                color: isCompleted || isReadyToClaim
                   ? "#a3e635"
                   : isActive
                     ? "#f97316"
@@ -354,7 +454,7 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
                 width={isMobile ? 16 : 28}
                 height={isMobile ? 16 : 28}
                 style={{
-                  color: isCompleted
+                  color: isCompleted || isReadyToClaim
                     ? "#a3e635"
                     : isActive
                       ? "#f97316"
@@ -380,7 +480,7 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
 
           {/* Description */}
           <p
-            className={`mb-auto leading-relaxed ${isMobile ? "text-xs" : "text-lg"}`}
+            className={`leading-relaxed ${isMobile ? "text-xs mb-2" : "text-lg mb-4"}`}
             style={{
               color: isCompleted
                 ? "#666"
@@ -394,8 +494,8 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
             {mission.description}
           </p>
 
-          {/* Progress bar for active mission */}
-          {isActive && mission.progress !== undefined && mission.progressMax !== undefined && (
+          {/* Progress bar for active mission (not ready to claim) */}
+          {isActive && !isReadyToClaim && !isClaimed && mission.progress !== undefined && mission.progressMax !== undefined && (
             <div className={isMobile ? "mb-2" : "mb-4"}>
               <div
                 className={`rounded-full overflow-hidden ${isMobile ? "h-1.5" : "h-2.5"}`}
@@ -412,11 +512,14 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
             </div>
           )}
 
+          {/* Spacer to push bottom content down */}
+          <div className="flex-grow" />
+
           {/* Bottom text */}
           <p
-            className={`flex items-center gap-1.5 ${isMobile ? "text-[10px]" : "text-lg"}`}
+            className={`flex items-center gap-1.5 ${isMobile ? "text-[10px]" : "text-lg"} ${isReadyToClaim || isClaimed ? (isMobile ? "mb-2" : "mb-4") : ""}`}
             style={{
-              color: isCompleted
+              color: isCompleted || isReadyToClaim
                 ? "#a3e635"
                 : isActive
                   ? "#f97316"
@@ -426,8 +529,37 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
             }}
           >
             {isCompleted && <Check width={isMobile ? 12 : 18} height={isMobile ? 12 : 18} />}
-            {mission.bottomText}
+            {isClaimed ? `Claimed +${mission.points} pts` : mission.bottomText}
           </p>
+
+          {/* Claim button for ready-to-claim missions */}
+          {isReadyToClaim && mission.questId && (
+            <Button
+              onClick={() => handleClaimMission(mission.questId!)}
+              disabled={isClaiming}
+              className={`w-full bg-[#a3e635] hover:bg-[#a3e635]/90 text-black font-bold ${isMobile ? "h-8 text-xs" : "h-12 text-base"} rounded-lg`}
+            >
+              {isClaiming ? (
+                <>
+                  <Loader2 className={`${isMobile ? "h-3 w-3" : "h-5 w-5"} mr-2 animate-spin`} />
+                  Claiming...
+                </>
+              ) : (
+                `Claim ${mission.points} pts`
+              )}
+            </Button>
+          )}
+
+          {/* Claimed button (disabled) */}
+          {isClaimed && !isBaseCompleted && (
+            <Button
+              disabled
+              className={`w-full bg-[#1a1a1a] text-[#666] cursor-not-allowed font-bold ${isMobile ? "h-8 text-xs" : "h-12 text-base"} rounded-lg`}
+            >
+              <Check className={`${isMobile ? "h-3 w-3" : "h-5 w-5"} mr-2`} />
+              Claimed
+            </Button>
+          )}
         </div>
       </div>
     )

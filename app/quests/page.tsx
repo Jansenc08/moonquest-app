@@ -79,6 +79,34 @@ export default async function QuestsPage() {
     .eq("id", user.id)
     .single()
 
+  // Get monthly mission quests
+  const { data: monthlyQuests } = await supabase
+    .from("quests")
+    .select("id, title, type, points_reward")
+    .eq("type", "monthly_mission")
+
+  // Get claimed monthly missions for this user
+  const monthlyQuestIds = monthlyQuests?.map(q => q.id) || []
+  const { data: claimedMissions } = monthlyQuestIds.length > 0
+    ? await supabase
+        .from("quest_completions")
+        .select("quest_id")
+        .eq("user_id", user.id)
+        .in("quest_id", monthlyQuestIds)
+    : { data: [] }
+
+  const claimedMissionIds = new Set(claimedMissions?.map(c => c.quest_id) || [])
+
+  // Build monthly missions map: quest_id -> { points_reward, isClaimed }
+  const monthlyMissionsData = monthlyQuests?.reduce((acc, quest) => {
+    acc[quest.title] = {
+      quest_id: quest.id,
+      points_reward: quest.points_reward,
+      isClaimed: claimedMissionIds.has(quest.id),
+    }
+    return acc
+  }, {} as Record<string, { quest_id: string; points_reward: number; isClaimed: boolean }>) || {}
+
   // Check if user has spun today
   const { data: spinQuest } = await supabase
     .from("quests")
@@ -153,6 +181,7 @@ export default async function QuestsPage() {
             hasConnectedWallet={!!walletCompletion}
             walletAddress={profileData?.wallet_address}
             walletQuestPoints={walletQuest?.points_reward || 50}
+            monthlyMissionsData={monthlyMissionsData}
           />
         </div>
       </div>
