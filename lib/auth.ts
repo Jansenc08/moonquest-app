@@ -40,6 +40,14 @@ export async function signUpWithEmail(email: string, password: string) {
     return { error: error.message }
   }
 
+  if (data.user && !data.session && !error) {
+    // Could be duplicate email with confirmation disabled
+    // Check if user was already confirmed
+    if (data.user.identities?.length === 0) {
+      return { error: "An account with this email already exists." }
+    }
+  }
+
   if (data.session) {
     // Email confirmation is disabled — user is logged in directly
     redirect("/dashboard")
