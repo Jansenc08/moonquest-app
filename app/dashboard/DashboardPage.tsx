@@ -19,6 +19,7 @@ import {
   Coffee,
   Gamepad2,
   Crown,
+  Moon,
 } from "lucide-react"
 
 export async function DashboardPage() {
@@ -320,7 +321,7 @@ export async function DashboardPage() {
 
           {/* SECTION 2 — DAILY CHECK-IN FEATURED CARD */}
           <section className="mb-16">
-            <Card className="bg-[#0d1a00] border-[#a3e635] animate-pulse-glow">
+            <Card className="bg-[#0d1a00] border-[#a3e635] animate-pulse-glow-white">
               <CardContent className="p-0">
                 <div className="flex flex-col lg:grid lg:grid-cols-[70%_30%] gap-4 lg:gap-8">
                   {/* LEFT SIDE */}
@@ -348,20 +349,56 @@ export async function DashboardPage() {
                         {last7Days.map((day, i) => (
                           <div key={i} className="flex flex-col items-center gap-1.5 md:gap-2">
                             <div
-                              className={`w-9 h-9 md:w-11 md:h-11 rounded-full flex items-center justify-center border-2 transition-all animate-pop-in ${
-                                day.completed
-                                  ? day.isToday
-                                    ? "bg-[#a3e635] border-[#a3e635]"
-                                    : "bg-[#4d7c0f] border-[#4d7c0f]"
-                                  : "bg-transparent border-[#333333]"
-                              }`}
-                              style={{ animationDelay: `${i * 80}ms` }}
+                             className={day.isToday && day.completed ? "moon-glow" : ""}
+                              style={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                animationDelay: `${i * 80}ms`,
+                                backgroundColor: day.completed ? "#222222" : "#1a1a1a",
+                                border: day.isToday && day.completed
+                                  ? "2px solid #ffffff"
+                                  : day.isToday && !day.completed
+                                  ? "1px solid rgba(255,255,255,0.4)"
+                                  : day.completed
+                                  ? "1px solid #555555"
+                                  : "1px solid #2a2a2a",
+                                boxShadow: day.isToday && day.completed
+                                  ? "0 0 12px rgba(255,255,255,0.5)"
+                                  : "none",
+                              }}
                             >
-                              {day.completed && (
-                                <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-black" />
-                              )}
+                              <Moon
+                                style={{
+                                  width: "18px",
+                                  height: "18px",
+                                  color: day.isToday
+                                    ? "#ffffff"
+                                    : day.completed
+                                    ? "#aaaaaa"
+                                    : "#333333",
+                                  fill: day.completed 
+                                    ? (day.isToday ? "#ffffff" : "#aaaaaa") 
+                                    : "none",
+                                }}
+                              />
                             </div>
-                            <span className="text-[10px] md:text-xs text-[#666666] font-medium">
+                            <span 
+                              className="text-[10px] md:text-xs font-medium"
+                              style={{
+                                color: day.isToday && day.completed
+                                  ? "#ffffff"
+                                  : day.isToday
+                                  ? "rgba(255,255,255,0.5)"
+                                  : day.completed
+                                  ? "#888888"
+                                  : "#444444",
+                                fontWeight: day.isToday && day.completed ? 600 : 500,
+                              }}
+                            >
                               {day.dayLabel}
                             </span>
                           </div>
