@@ -8,6 +8,27 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Gamepad2, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function getPasswordStrength(password: string) {
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+  }
+  const score = Object.values(checks).filter(Boolean).length
+  return { checks, score }
+}
+
+function getStrengthLabel(score: number) {
+  if (score <= 1) return { label: "Weak", color: "#ef4444" }
+  if (score === 2) return { label: "Fair", color: "#f97316" }
+  if (score === 3) return { label: "Good", color: "#eab308" }
+  return { label: "Strong", color: "#a3e635" }
+}
+
 export function LoginForm() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
@@ -19,31 +40,108 @@ export function LoginForm() {
   const searchParams = useSearchParams()
   const urlError = searchParams.get("error")
 
+  const { checks: passwordChecks, score: passwordScore } = getPasswordStrength(password)
+  const strengthInfo = getStrengthLabel(passwordScore)
+
   async function submitCredentials(e: React.FormEvent) {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
     setSuccess(null)
 
+    const trimmedEmail = email.trim()
+
+    // Email validation
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setError("Please enter a valid email address")
+      setIsLoading(false)
+      return
+    }
+
     try {
       if (isLogin) {
-        const loginResult = await signInWithEmail(email, password)
+        // Login validation
+        if (password.length < 6) {
+          setError("Password must be at least 6 characters")
+          setIsLoading(false)
+          return
+        }
+
+        const loginResult = await signInWithEmail(trimmedEmail, password)
         if (loginResult?.error) {
-          setError(loginResult.error)
+          const errMsg = loginResult.error.toLowerCase()
+          if (
+            errMsg.includes("invalid login") ||
+            errMsg.includes("invalid credentials") ||
+            errMsg.includes("wrong password")
+          ) {
+            setError("Incorrect email or password. Please try again.")
+          } else if (errMsg.includes("email not confirmed")) {
+            setError("Please confirm your email before logging in.")
+          } else if (errMsg.includes("too many requests")) {
+            setError("Too many attempts. Please wait a moment and try again.")
+          } else {
+            setError(loginResult.error)
+          }
+          setIsLoading(false)
         }
       } else {
-        const signupResult = await signUpWithEmail(email, password)
+        // Signup validation
+        if (!passwordChecks.length) {
+          setError("Password must be at least 8 characters")
+          setIsLoading(false)
+          return
+        }
+        if (!passwordChecks.uppercase) {
+          setError("Password must contain at least one uppercase letter")
+          setIsLoading(false)
+          return
+        }
+        if (!passwordChecks.lowercase) {
+          setError("Password must contain at least one lowercase letter")
+          setIsLoading(false)
+          return
+        }
+        if (!passwordChecks.number) {
+          setError("Password must contain at least one number")
+          setIsLoading(false)
+          return
+        }
+        if (!passwordChecks.special) {
+          setError("Password must contain at least one special character")
+          setIsLoading(false)
+          return
+        }
+
+        const signupResult = await signUpWithEmail(trimmedEmail, password)
         if (signupResult?.error) {
-          setError(signupResult.error)
-        } else if (signupResult?.success) {
+          const errMsg = signupResult.error.toLowerCase()
+          if (
+            errMsg.includes("already registered") ||
+            errMsg.includes("already exists") ||
+            errMsg.includes("email already")
+          ) {
+            setError("An account with this email already exists. Try logging in instead.")
+          } else {
+            setError(signupResult.error)
+          }
+          setIsLoading(false)
+          return
+        }
+
+        if (signupResult?.success) {
           setSuccess(signupResult.success)
           setEmail("")
           setPassword("")
+          setIsLoading(false)
         }
       }
-    } catch {
+    } catch (err: unknown) {
+      // Next.js redirect throws with digest property — not a real error
+      if (err && typeof err === "object" && "digest" in err) {
+        return
+      }
       setError("Something went wrong. Please try again.")
-    } finally {
       setIsLoading(false)
     }
   }
@@ -53,12 +151,12 @@ export function LoginForm() {
     setError(null)
 
     try {
-      const authResult = await signInWithGoogle()
-      if (authResult?.error) {
-        setError(authResult.error)
-        setIsLoading(false)
+      await signInWithGoogle()
+    } catch (err: unknown) {
+      // Next.js redirect throws with digest property — not a real error
+      if (err && typeof err === "object" && "digest" in err) {
+        return
       }
-    } catch {
       setError("Could not connect to Google. Please try again.")
       setIsLoading(false)
     }
@@ -159,10 +257,32 @@ export function LoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    minLength={6}
+                    minLength={isLogin ? 6 : 8}
                     className="w-full h-11 pl-10 pr-4 rounded-lg bg-[#080808] border border-[#222222] text-white placeholder:text-[#666666] focus:outline-none focus:border-[#a3e635]/50 transition-colors"
                   />
                 </div>
+                {/* Password strength indicator (signup only) */}
+                {!isLogin && password.length > 0 && (
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="flex gap-0.5 flex-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-1 flex-1 rounded-sm"
+                          style={{
+                            backgroundColor: i < passwordScore ? strengthInfo.color : "#222222",
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <span
+                      className="text-xs font-medium"
+                      style={{ color: strengthInfo.color }}
+                    >
+                      {strengthInfo.label}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <Button

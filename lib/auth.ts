@@ -7,7 +7,7 @@ import { headers } from "next/headers"
 export async function signInWithEmail(email: string, password: string) {
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -16,7 +16,11 @@ export async function signInWithEmail(email: string, password: string) {
     return { error: error.message }
   }
 
-  redirect("/dashboard")
+  if (data.session) {
+    redirect("/dashboard")
+  }
+
+  return { error: "Login failed. Please try again." }
 }
 
 export async function signUpWithEmail(email: string, password: string) {
@@ -24,7 +28,7 @@ export async function signUpWithEmail(email: string, password: string) {
   const headersList = await headers()
   const origin = headersList.get("origin")
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -36,6 +40,12 @@ export async function signUpWithEmail(email: string, password: string) {
     return { error: error.message }
   }
 
+  if (data.session) {
+    // Email confirmation is disabled — user is logged in directly
+    redirect("/dashboard")
+  }
+
+  // Email confirmation is enabled — show message
   return { success: "Check your email for a confirmation link." }
 }
 
