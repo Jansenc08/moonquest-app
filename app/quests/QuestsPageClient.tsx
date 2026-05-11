@@ -21,7 +21,9 @@ import {
   Disc,
   ArrowRight,
   RefreshCw,
+  Wallet,
 } from "lucide-react"
+import { ConnectWalletButton } from "@/components/quests/ConnectWalletButton"
 import type { LucideIcon } from "lucide-react"
 
 interface Quest {
@@ -29,7 +31,7 @@ interface Quest {
   title: string
   description: string
   points_reward: number
-  type: "daily_checkin" | "daily_spin" | "dummy"
+  type: "daily_checkin" | "daily_spin" | "wallet_connect" | "dummy"
 }
 
 interface DummyQuest {
@@ -57,6 +59,9 @@ interface QuestsPageClientProps {
   pointsEarnedToday: number
   username: string
   allPlayers: Player[]
+  hasConnectedWallet: boolean
+  walletAddress?: string | null
+  walletQuestPoints: number
 }
 
 const dummyQuests: DummyQuest[] = [
@@ -113,9 +118,13 @@ export function QuestsPageClient({
   pointsEarnedToday,
   username,
   allPlayers,
+  hasConnectedWallet: initialHasConnectedWallet,
+  walletAddress,
+  walletQuestPoints,
 }: QuestsPageClientProps) {
   const [pointsBalance, setPointsBalance] = useState(initialPointsBalance)
   const [hasSpunToday, setHasSpunToday] = useState(initialHasSpunToday)
+  const [hasConnectedWallet, setHasConnectedWallet] = useState(initialHasConnectedWallet)
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null)
   const [isQuestModalOpen, setIsQuestModalOpen] = useState(false)
 
@@ -294,7 +303,7 @@ export function QuestsPageClient({
                 Check in daily to earn points and build your streak
               </p>
               {initialHasCheckedInToday ? (
-                <Button disabled className="w-full bg-[#222222] text-[#888888] cursor-not-allowed text-lg py-4 h-auto rounded-xl">
+                <Button disabled className="w-full bg-[#222222] text-[#888888] cursor-not-allowed text-base font-bold h-[52px] rounded-lg">
                   ✓ Completed Today
                 </Button>
               ) : (
@@ -348,17 +357,72 @@ export function QuestsPageClient({
                 Spin the wheel once per day to win bonus points!
               </p>
               {hasSpunToday ? (
-                <Button disabled className="w-full bg-[#222222] text-[#888888] cursor-not-allowed text-lg py-4 h-auto rounded-xl">
+                <Button disabled className="w-full bg-[#222222] text-[#888888] cursor-not-allowed text-base font-bold h-[52px] rounded-lg">
                   <CheckCircle2 className="h-5 w-5 mr-2" />
                   Spun Today
                 </Button>
               ) : (
                 <a href="#spin-section">
-                  <Button className="w-full bg-[#a3e635] text-black hover:bg-[#a3e635]/90 text-lg py-4 h-auto rounded-xl font-semibold">
+                  <Button className="w-full bg-[#a3e635] text-black hover:bg-[#a3e635]/90 text-base font-bold h-[52px] rounded-lg">
                     Spin Now
                   </Button>
                 </a>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Connect Wallet Card */}
+          <Card 
+            className={`group transition-all duration-200 border-2 min-h-[300px] rounded-2xl animate-slide-up ${
+              hasConnectedWallet 
+                ? "bg-[#111111] border-[#1a1a1a]" 
+                : "bg-[#0d1a00] border-[#a3e635] hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)]"
+            }`}
+            style={{ animationDelay: "400ms" }}
+          >
+            <CardContent className="p-6 md:p-10 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-6">
+                <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
+                  hasConnectedWallet 
+                    ? "bg-[#a3e635]/20 text-[#a3e635]" 
+                    : "bg-[#a3e635]/20 text-[#a3e635]"
+                }`}>
+                  {hasConnectedWallet ? "✓ Done" : "Active"}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-[#a3e635]">+{walletQuestPoints} pts</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openQuestModal({
+                        id: "wallet-connect",
+                        title: "Connect Wallet",
+                        description: "Connect your Web3 wallet to unlock onchain rewards",
+                        points_reward: walletQuestPoints,
+                        type: "wallet_connect",
+                      })
+                    }}
+                    className="w-[22px] h-[22px] rounded-full bg-[#1a1a1a] border border-[#333] text-[#666] text-[11px] font-bold flex items-center justify-center hover:bg-[#a3e635] hover:border-[#a3e635] hover:text-black transition-all duration-200"
+                  >
+                    ?
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 mb-3">
+                <Wallet className="h-8 w-8 text-[#a3e635] shrink-0" />
+                <h3 className="text-2xl xl:text-3xl font-bold text-white">Connect Wallet</h3>
+              </div>
+              <p className="text-lg xl:text-xl text-[#666666] mb-8 flex-grow leading-relaxed">
+                Connect your Web3 wallet to unlock onchain rewards
+              </p>
+              <ConnectWalletButton
+                isCompleted={hasConnectedWallet}
+                walletAddress={walletAddress}
+                onComplete={(result) => {
+                  setPointsBalance(result.new_balance)
+                  setHasConnectedWallet(true)
+                }}
+              />
             </CardContent>
           </Card>
 
@@ -402,8 +466,8 @@ export function QuestsPageClient({
                   <p className="text-lg text-[#555555] mb-8 flex-grow leading-relaxed">
                     {quest.description}
                   </p>
-                  <Button disabled className="w-full bg-[#1a1a1a] text-[#555555] cursor-not-allowed text-lg py-4 h-auto rounded-xl">
-                    <Lock className="h-6 w-6 mr-2" />
+                  <Button disabled className="w-full bg-[#1a1a1a] text-[#555555] cursor-not-allowed text-base font-bold h-[52px] rounded-lg">
+                    <Lock className="h-5 w-5 mr-2" />
                     Locked
                   </Button>
                 </CardContent>
@@ -424,7 +488,9 @@ export function QuestsPageClient({
             ? initialHasCheckedInToday
             : selectedQuest?.type === "daily_spin"
               ? hasSpunToday
-              : false
+              : selectedQuest?.type === "wallet_connect"
+                ? hasConnectedWallet
+                : false
         }
       />
     </>

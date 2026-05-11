@@ -1,14 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { X, CalendarCheck, RotateCw, Lock, CheckCircle } from "lucide-react"
+import { X, CalendarCheck, RotateCw, Lock, CheckCircle, Wallet } from "lucide-react"
 
 interface Quest {
   id: string
   title: string
   description: string
   points_reward: number
-  type: "daily_checkin" | "daily_spin" | "dummy"
+  type: "daily_checkin" | "daily_spin" | "wallet_connect" | "dummy"
 }
 
 interface QuestDetailsModalProps {
@@ -71,6 +71,12 @@ export function QuestDetailsModal({
           bgColor: "#1a1a00",
           iconColor: "#f59e0b",
         }
+      case "wallet_connect":
+        return {
+          Icon: Wallet,
+          bgColor: "#1a3300",
+          iconColor: "#a3e635",
+        }
       default:
         return {
           Icon: Lock,
@@ -91,6 +97,11 @@ export function QuestDetailsModal({
         ? { text: "DONE", bgColor: "#1a1a00", textColor: "#f59e0b" }
         : { text: "ACTIVE", bgColor: "#f59e0b", textColor: "#000" }
     }
+    if (quest.type === "wallet_connect") {
+      return isCompletedToday
+        ? { text: "DONE", bgColor: "#1a3300", textColor: "#a3e635" }
+        : { text: "ACTIVE", bgColor: "#a3e635", textColor: "#000" }
+    }
     return { text: "COMING SOON", bgColor: "#1a1a1a", textColor: "#555" }
   }
 
@@ -100,6 +111,8 @@ export function QuestDetailsModal({
         return "Click the Check In button once per day. Each consecutive day increases your streak and bonus points. Missing a day resets your streak."
       case "daily_spin":
         return "Spin the wheel once per day for a chance to win bonus points. The wheel has 8 segments with different point values and rarities."
+      case "wallet_connect":
+        return "Click the Connect Wallet button and approve the connection in your wallet (MetaMask, Coinbase Wallet, or any WalletConnect-compatible wallet). Once connected, your wallet address is saved and 50 pts are instantly awarded to your account."
       default:
         return "This quest is coming soon. Complete active quests to unlock future missions."
     }
@@ -265,6 +278,55 @@ export function QuestDetailsModal({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Wallet Connect Reward Info (wallet_connect only) */}
+        {quest.type === "wallet_connect" && (
+          <div
+            className="mb-6"
+            style={{
+              backgroundColor: "#0d1a00",
+              border: "1px solid #a3e635",
+              borderRadius: "10px",
+              padding: "16px",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p style={{ color: "#888", fontSize: "12px" }}>
+                  One-time reward
+                </p>
+                <p
+                  className="font-bold"
+                  style={{ color: "#a3e635", fontSize: "24px" }}
+                >
+                  50 pts
+                </p>
+              </div>
+              <div className="text-right">
+                <p style={{ color: "#888", fontSize: "12px" }}>
+                  Unlocks
+                </p>
+                <p
+                  className="font-bold"
+                  style={{ color: "#fff", fontSize: "24px" }}
+                >
+                  Onchain Badge
+                </p>
+              </div>
+            </div>
+            {isCompletedToday && (
+              <div
+                className="flex items-center gap-2 mt-3 pt-3"
+                style={{ borderTop: "1px solid #1a3300" }}
+              >
+                <CheckCircle className="h-4 w-4 text-[#a3e635]" />
+                <span style={{ color: "#a3e635", fontSize: "13px" }}>
+                  Wallet connected!
+                </span>
+              </div>
+            )}
           </div>
         )}
 

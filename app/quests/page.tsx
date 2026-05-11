@@ -55,6 +55,30 @@ export default async function QuestsPage() {
   const lastCheckinSGT = lastCheckinDate ? getSGTDateKey(lastCheckinDate) : null
   const hasCheckedInToday = lastCheckinSGT === todayStr
 
+  // Get wallet connect quest
+  const { data: walletQuest } = await supabase
+    .from("quests")
+    .select("*")
+    .eq("type", "wallet_connect")
+    .single()
+
+  // Check if user has completed wallet quest
+  const { data: walletCompletion } = walletQuest
+    ? await supabase
+        .from("quest_completions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("quest_id", walletQuest.id)
+        .maybeSingle()
+    : { data: null }
+
+  // Get wallet address from profile
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("wallet_address")
+    .eq("id", user.id)
+    .single()
+
   // Check if user has spun today
   const { data: spinQuest } = await supabase
     .from("quests")
@@ -126,6 +150,9 @@ export default async function QuestsPage() {
             pointsEarnedToday={pointsEarnedToday}
             username={username}
             allPlayers={allPlayers}
+            hasConnectedWallet={!!walletCompletion}
+            walletAddress={profileData?.wallet_address}
+            walletQuestPoints={walletQuest?.points_reward || 50}
           />
         </div>
       </div>

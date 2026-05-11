@@ -16,6 +16,7 @@ export interface Database {
           points_balance: number
           streak_count: number
           last_checkin_at: string | null
+          wallet_address: string | null
           created_at: string
         }
         Insert: {
@@ -24,6 +25,7 @@ export interface Database {
           points_balance?: number
           streak_count?: number
           last_checkin_at?: string | null
+          wallet_address?: string | null
           created_at?: string
         }
         Update: {
@@ -32,6 +34,7 @@ export interface Database {
           points_balance?: number
           streak_count?: number
           last_checkin_at?: string | null
+          wallet_address?: string | null
           created_at?: string
         }
       }
@@ -69,18 +72,21 @@ export interface Database {
           id: string
           user_id: string
           quest_id: string
+          points_earned: number | null
           completed_at: string
         }
         Insert: {
           id?: string
           user_id: string
           quest_id: string
+          points_earned?: number | null
           completed_at?: string
         }
         Update: {
           id?: string
           user_id?: string
           quest_id?: string
+          points_earned?: number | null
           completed_at?: string
         }
       }

@@ -24,6 +24,7 @@ import {
   Home,
   LayoutDashboard,
 } from "lucide-react"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 import type { User, RealtimePostgresChangesPayload, AuthChangeEvent } from "@supabase/supabase-js"
 
 interface Profile {
@@ -174,6 +175,12 @@ export function Navbar() {
                     </span>
                   </div>
                 </div>
+
+                <ConnectButton 
+                  showBalance={false}
+                  chainStatus="none"
+                  accountStatus="avatar"
+                />
 
                 <div className="flex items-center gap-4">
                   <Avatar className="h-11 w-11 border-2 border-[#333333]">

@@ -69,13 +69,13 @@ export function CheckInButton({ hasCheckedIn, compact, fullWidth }: CheckInButto
   if (compact) {
     return (
       <Button
-        className={`bg-[#a3e635] hover:bg-[#a3e635]/90 text-black font-semibold text-sm h-9 ${fullWidth ? "w-full" : ""}`}
+        className={`bg-[#a3e635] hover:bg-[#a3e635]/90 text-black font-bold text-base h-[52px] rounded-lg ${fullWidth ? "w-full" : ""}`}
         onClick={performCheckIn}
         disabled={loading}
       >
         {loading ? (
           <>
-            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
             Checking in...
           </>
         ) : (
