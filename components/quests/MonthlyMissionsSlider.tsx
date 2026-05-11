@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useCallback } from "react"
+import React, { useRef, useState, useCallback, useEffect } from "react"
 import {
   Flame,
   CalendarCheck,
@@ -15,9 +15,12 @@ import {
   ArrowRight,
 } from "lucide-react"
 
-const CARD_WIDTH = 500
-const CARD_HEIGHT = 380
-const GAP = 24
+const CARD_WIDTH_DESKTOP = 500
+const CARD_WIDTH_MOBILE = 200
+const CARD_HEIGHT_DESKTOP = 380
+const CARD_HEIGHT_MOBILE = 280
+const GAP_DESKTOP = 24
+const GAP_MOBILE = 12
 const TOTAL_CARDS = 6
 
 interface MonthlyMissionsSliderProps {
@@ -43,12 +46,27 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
   const [translateX, setTranslateX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   
   const dragStartX = useRef(0)
   const dragStartTranslate = useRef(0)
   const lastX = useRef(0)
   const lastTime = useRef(0)
   const velocity = useRef(0)
+
+  const CARD_WIDTH = isMobile ? CARD_WIDTH_MOBILE : CARD_WIDTH_DESKTOP
+  const CARD_HEIGHT = isMobile ? CARD_HEIGHT_MOBILE : CARD_HEIGHT_DESKTOP
+  const GAP = isMobile ? GAP_MOBILE : GAP_DESKTOP
+
+  // Handle mobile detection
+  useEffect(() => {
+    function checkMobile() {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const today = new Date()
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
@@ -226,7 +244,6 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
     
     const isCompleted = mission.status === "completed"
     const isActive = mission.status === "active"
-    const isLocked = mission.status === "locked"
     const isFinale = mission.status === "finale"
     
     let cardBg = "#0f0f0f"
@@ -256,26 +273,27 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
         }}
       >
         <div
-          className={`rounded-2xl p-8 flex flex-col ${isActive ? "animate-pulse-glow-orange" : ""}`}
+          className={`rounded-2xl flex flex-col ${isActive ? "animate-pulse-glow-orange" : ""}`}
           style={{
             height: CARD_HEIGHT,
+            padding: isMobile ? "16px" : "32px",
             background: cardBg,
             border: `2px solid ${borderColor}`,
           }}
         >
           {/* Badge */}
-          <div className="flex items-center justify-between mb-5">
+          <div className={`flex items-center justify-between ${isMobile ? "mb-3" : "mb-5"}`}>
             {isCompleted ? (
               <span
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide"
+                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
                 style={{ background: "#a3e635", color: "#000" }}
               >
-                <Check width={14} height={14} />
-                COMPLETED
+                <Check width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
+                {isMobile ? "DONE" : "COMPLETED"}
               </span>
             ) : isActive ? (
               <span
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide"
+                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
                 style={{
                   background: "#1a0d00",
                   color: "#f97316",
@@ -287,23 +305,23 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
               </span>
             ) : isFinale ? (
               <span
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide"
+                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
                 style={{ background: "#1a1a2e", color: "#555" }}
               >
-                <Crown width={14} height={14} />
-                MONTH FINALE
+                <Crown width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
+                {isMobile ? "FINALE" : "MONTH FINALE"}
               </span>
             ) : (
               <span
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide"
+                className={`flex items-center gap-1.5 rounded-lg font-bold uppercase tracking-wide ${isMobile ? "px-2 py-1 text-[10px]" : "px-4 py-2 text-sm"}`}
                 style={{ background: "#1a1a1a", color: "#555" }}
               >
-                <Lock width={14} height={14} />
+                <Lock width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} />
                 LOCKED
               </span>
             )}
             <span
-              className="text-xl font-bold"
+              className={`font-bold ${isMobile ? "text-xs" : "text-xl"}`}
               style={{
                 color: isCompleted
                   ? "#a3e635"
@@ -314,14 +332,14 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
                       : "#444",
               }}
             >
-              +{mission.points} pts
+              +{mission.points}
             </span>
           </div>
 
           {/* Icon + Title */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className={`flex items-center ${isMobile ? "gap-2 mb-2" : "gap-4 mb-4"}`}>
             <div
-              className="w-14 h-14 rounded-xl flex items-center justify-center"
+              className={`rounded-xl flex items-center justify-center ${isMobile ? "w-8 h-8" : "w-14 h-14"}`}
               style={{
                 background: isCompleted
                   ? "#1a1a1a"
@@ -333,8 +351,8 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
               }}
             >
               <Icon
-                width={28}
-                height={28}
+                width={isMobile ? 16 : 28}
+                height={isMobile ? 16 : 28}
                 style={{
                   color: isCompleted
                     ? "#a3e635"
@@ -347,7 +365,7 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
               />
             </div>
             <h3
-              className="font-bold text-2xl"
+              className={`font-bold ${isMobile ? "text-sm" : "text-2xl"}`}
               style={{
                 color: isCompleted || isActive
                   ? "#fff"
@@ -362,7 +380,7 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
 
           {/* Description */}
           <p
-            className="text-lg mb-auto leading-relaxed"
+            className={`mb-auto leading-relaxed ${isMobile ? "text-xs" : "text-lg"}`}
             style={{
               color: isCompleted
                 ? "#666"
@@ -378,9 +396,9 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
 
           {/* Progress bar for active mission */}
           {isActive && mission.progress !== undefined && mission.progressMax !== undefined && (
-            <div className="mb-4">
+            <div className={isMobile ? "mb-2" : "mb-4"}>
               <div
-                className="h-2.5 rounded-full overflow-hidden"
+                className={`rounded-full overflow-hidden ${isMobile ? "h-1.5" : "h-2.5"}`}
                 style={{ background: "#2a1500" }}
               >
                 <div
@@ -396,7 +414,7 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
 
           {/* Bottom text */}
           <p
-            className="text-lg flex items-center gap-2"
+            className={`flex items-center gap-1.5 ${isMobile ? "text-[10px]" : "text-lg"}`}
             style={{
               color: isCompleted
                 ? "#a3e635"
@@ -407,7 +425,7 @@ export function MonthlyMissionsSlider({ streakCount }: MonthlyMissionsSliderProp
                     : "#444",
             }}
           >
-            {isCompleted && <Check width={18} height={18} />}
+            {isCompleted && <Check width={isMobile ? 12 : 18} height={isMobile ? 12 : 18} />}
             {mission.bottomText}
           </p>
         </div>

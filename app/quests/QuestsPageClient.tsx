@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { CheckInButton } from "@/app/dashboard/CheckInButton"
 import { SpinWheelSection } from "@/components/quests/SpinWheelSection"
 import { MonthlyMissionsSlider } from "@/components/quests/MonthlyMissionsSlider"
+import { QuestDetailsModal } from "@/components/quests/QuestDetailsModal"
 import {
   Coins,
   Flame,
@@ -22,6 +23,14 @@ import {
   RefreshCw,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+
+interface Quest {
+  id: string
+  title: string
+  description: string
+  points_reward: number
+  type: "daily_checkin" | "daily_spin" | "dummy"
+}
 
 interface DummyQuest {
   id: string
@@ -107,10 +116,17 @@ export function QuestsPageClient({
 }: QuestsPageClientProps) {
   const [pointsBalance, setPointsBalance] = useState(initialPointsBalance)
   const [hasSpunToday, setHasSpunToday] = useState(initialHasSpunToday)
+  const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null)
+  const [isQuestModalOpen, setIsQuestModalOpen] = useState(false)
 
   function handleSpinComplete(result: { new_balance: number }) {
     setPointsBalance(result.new_balance)
     setHasSpunToday(true)
+  }
+
+  function openQuestModal(quest: Quest) {
+    setSelectedQuest(quest)
+    setIsQuestModalOpen(true)
   }
 
   return (
@@ -233,7 +249,7 @@ export function QuestsPageClient({
           All Quests
         </h2>
 
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8 xl:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 xl:gap-10">
           {/* Daily Check-in Card in Grid */}
           <Card 
             className={`group transition-all duration-200 border-2 min-h-[300px] rounded-2xl animate-slide-up ${
@@ -243,7 +259,7 @@ export function QuestsPageClient({
             } hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)]`}
             style={{ animationDelay: "300ms" }}
           >
-            <CardContent className="p-10 flex flex-col h-full">
+            <CardContent className="p-6 md:p-10 flex flex-col h-full">
               <div className="flex items-center justify-between mb-6">
                 <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
                   initialHasCheckedInToday 
@@ -252,9 +268,26 @@ export function QuestsPageClient({
                 }`}>
                   {initialHasCheckedInToday ? "✓ Done" : "Active"}
                 </span>
-                <span className="text-2xl font-bold text-[#a3e635]">
-                  +{initialHasCheckedInToday ? pointsEarnedToday : todayCheckInPoints} pts
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-[#a3e635]">
+                    +{initialHasCheckedInToday ? pointsEarnedToday : todayCheckInPoints} pts
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openQuestModal({
+                        id: "daily-checkin",
+                        title: "Daily Check-in",
+                        description: "Check in daily to earn points and build your streak",
+                        points_reward: todayCheckInPoints,
+                        type: "daily_checkin",
+                      })
+                    }}
+                    className="w-[22px] h-[22px] rounded-full bg-[#1a1a1a] border border-[#333] text-[#666] text-[11px] font-bold flex items-center justify-center hover:bg-[#a3e635] hover:border-[#a3e635] hover:text-black transition-all duration-200"
+                  >
+                    ?
+                  </button>
+                </div>
               </div>
               <h3 className="text-2xl xl:text-3xl font-bold text-white mb-3">Daily Check-in</h3>
               <p className="text-lg xl:text-xl text-[#666666] mb-8 flex-grow leading-relaxed">
@@ -279,7 +312,7 @@ export function QuestsPageClient({
             } hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)]`}
             style={{ animationDelay: "350ms" }}
           >
-            <CardContent className="p-10 flex flex-col h-full">
+            <CardContent className="p-6 md:p-10 flex flex-col h-full">
               <div className="flex items-center justify-between mb-6">
                 <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
                   hasSpunToday 
@@ -288,7 +321,24 @@ export function QuestsPageClient({
                 }`}>
                   {hasSpunToday ? "✓ Done" : "Active"}
                 </span>
-                <span className="text-2xl font-bold text-[#a3e635]">Up to +100 pts</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-[#a3e635]">Up to +100 pts</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openQuestModal({
+                        id: "daily-spin",
+                        title: "Daily Spin",
+                        description: "Spin the wheel once per day to win bonus points!",
+                        points_reward: 100,
+                        type: "daily_spin",
+                      })
+                    }}
+                    className="w-[22px] h-[22px] rounded-full bg-[#1a1a1a] border border-[#333] text-[#666] text-[11px] font-bold flex items-center justify-center hover:bg-[#a3e635] hover:border-[#a3e635] hover:text-black transition-all duration-200"
+                  >
+                    ?
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-4 mb-3">
                 <Disc className="h-8 w-8 text-[#a3e635] shrink-0" />
@@ -321,12 +371,29 @@ export function QuestsPageClient({
                 className="bg-[#111111] border-2 border-[#1a1a1a] opacity-60 min-h-[300px] rounded-2xl animate-slide-up"
                 style={{ animationDelay: `${400 + i * 100}ms` }}
               >
-                <CardContent className="p-10 flex flex-col h-full">
+                <CardContent className="p-6 md:p-10 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-6">
                     <span className="px-5 py-2 rounded-full bg-[#222222] text-[#666666] text-base font-bold uppercase">
                       Coming Soon
                     </span>
-                    <span className="text-2xl font-bold text-[#666666]">+{quest.points_reward} pts</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-[#666666]">+{quest.points_reward} pts</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openQuestModal({
+                            id: quest.id,
+                            title: quest.title,
+                            description: quest.description,
+                            points_reward: quest.points_reward,
+                            type: "dummy",
+                          })
+                        }}
+                        className="w-[22px] h-[22px] rounded-full bg-[#1a1a1a] border border-[#333] text-[#666] text-[11px] font-bold flex items-center justify-center hover:bg-[#a3e635] hover:border-[#a3e635] hover:text-black transition-all duration-200"
+                      >
+                        ?
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4 mb-3">
                     <IconComponent className="h-8 w-8 text-[#555555] shrink-0" />
@@ -345,6 +412,21 @@ export function QuestsPageClient({
           })}
         </div>
       </section>
+
+      {/* Quest Details Modal */}
+      <QuestDetailsModal
+        quest={selectedQuest}
+        isOpen={isQuestModalOpen}
+        onClose={() => setIsQuestModalOpen(false)}
+        streakCount={initialStreakCount}
+        isCompletedToday={
+          selectedQuest?.type === "daily_checkin"
+            ? initialHasCheckedInToday
+            : selectedQuest?.type === "daily_spin"
+              ? hasSpunToday
+              : false
+        }
+      />
     </>
   )
 }

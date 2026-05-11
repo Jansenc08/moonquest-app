@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { RewardDetailsModal } from "@/components/rewards/RewardDetailsModal"
 import {
   Coins,
   Coffee,
@@ -51,6 +52,8 @@ export default function RewardsPage() {
     newBalance: number
   } | null>(null)
   const [recentlyRedeemed, setRecentlyRedeemed] = useState<string | null>(null)
+  const [selectedReward, setSelectedReward] = useState<Reward | null>(null)
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -213,7 +216,7 @@ export default function RewardsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {rewards.map((reward) => {
                 const isAffordable = pointsBalance >= reward.points_cost
                 const isOutOfStock = reward.stock === 0
@@ -232,20 +235,32 @@ export default function RewardsPage() {
                   >
                     <div>
                       <div className="flex items-start justify-between mb-4">
-                        <div
-                          className={`w-11 h-11 rounded-lg flex items-center justify-center ${
-                            isAffordable && !isOutOfStock
-                              ? "bg-[#1a3300]"
-                              : "bg-[#1a1a1a]"
-                          }`}
-                        >
-                          <IconComponent
-                            className={`h-6 w-6 ${
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-11 h-11 rounded-lg flex items-center justify-center ${
                               isAffordable && !isOutOfStock
-                                ? "text-[#a3e635]"
-                                : "text-[#444444]"
+                                ? "bg-[#1a3300]"
+                                : "bg-[#1a1a1a]"
                             }`}
-                          />
+                          >
+                            <IconComponent
+                              className={`h-6 w-6 ${
+                                isAffordable && !isOutOfStock
+                                  ? "text-[#a3e635]"
+                                  : "text-[#444444]"
+                              }`}
+                            />
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedReward(reward)
+                              setIsRewardModalOpen(true)
+                            }}
+                            className="w-[22px] h-[22px] rounded-full bg-[#1a1a1a] border border-[#333] text-[#666] text-[11px] font-bold flex items-center justify-center hover:bg-[#a3e635] hover:border-[#a3e635] hover:text-black transition-all duration-200"
+                          >
+                            ?
+                          </button>
                         </div>
                         <span className="text-xs text-[#666666]">
                           {reward.stock === -1 || reward.stock === null
@@ -396,6 +411,22 @@ export default function RewardsPage() {
           </Card>
         </div>
       )}
+
+      {/* Reward Details Modal */}
+      <RewardDetailsModal
+        reward={selectedReward}
+        isOpen={isRewardModalOpen}
+        onClose={() => setIsRewardModalOpen(false)}
+        userBalance={pointsBalance}
+        onRedeem={(rewardId) => {
+          const reward = rewards.find((r) => r.id === rewardId)
+          if (reward) {
+            setIsRewardModalOpen(false)
+            handleRedeem(reward)
+          }
+        }}
+        isRedeeming={redeeming === selectedReward?.id}
+      />
     </main>
   )
 }

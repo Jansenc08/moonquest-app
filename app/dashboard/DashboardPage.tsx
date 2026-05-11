@@ -169,7 +169,7 @@ export async function DashboardPage() {
               </div>
 
               {/* Heading */}
-              <h1 className="text-5xl lg:text-6xl xl:text-[64px] font-bold leading-[1.1]">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl xl:text-[64px] font-bold leading-[1.1]">
                 <span className="text-white">Welcome back,</span>
                 <br />
                 <span className="text-[#a3e635]">{firstName}.</span>
@@ -322,33 +322,33 @@ export async function DashboardPage() {
           <section className="mb-16">
             <Card className="bg-[#0d1a00] border-[#a3e635] animate-pulse-glow">
               <CardContent className="p-0">
-                <div className="grid lg:grid-cols-[70%_30%] gap-8">
+                <div className="flex flex-col lg:grid lg:grid-cols-[70%_30%] gap-4 lg:gap-8">
                   {/* LEFT SIDE */}
-                  <div className="p-8 lg:p-10">
-                    <div className="flex items-center gap-3 mb-6">
+                  <div className="p-4 md:p-8 lg:p-10">
+                    <div className="flex items-center gap-3 mb-4 md:mb-6">
                       <span className="px-4 py-1.5 rounded-full bg-[#a3e635] text-black text-sm font-bold uppercase tracking-wide">
                         Daily Quest
                       </span>
                       <Zap className="h-6 w-6 text-[#a3e635]" />
                     </div>
 
-                    <h2 className="text-3xl font-bold text-white mb-3">
+                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 md:mb-3">
                       Daily Check-in
                     </h2>
-                    <p className="text-[#888888] text-base mb-8">
+                    <p className="text-[#888888] text-sm md:text-base mb-6 md:mb-8">
                       Check in daily to maintain your streak and earn bonus points
                     </p>
 
                     {/* Last 7 Days */}
-                    <div className="mb-8">
-                      <p className="text-xs text-[#888888] uppercase tracking-widest mb-4">
+                    <div className="mb-6 md:mb-8">
+                      <p className="text-xs text-[#888888] uppercase tracking-widest mb-3 md:mb-4">
                         Last 7 Days
                       </p>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 md:gap-3">
                         {last7Days.map((day, i) => (
-                          <div key={i} className="flex flex-col items-center gap-2">
+                          <div key={i} className="flex flex-col items-center gap-1.5 md:gap-2">
                             <div
-                              className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all animate-pop-in ${
+                              className={`w-9 h-9 md:w-11 md:h-11 rounded-full flex items-center justify-center border-2 transition-all animate-pop-in ${
                                 day.completed
                                   ? day.isToday
                                     ? "bg-[#a3e635] border-[#a3e635]"
@@ -358,10 +358,10 @@ export async function DashboardPage() {
                               style={{ animationDelay: `${i * 80}ms` }}
                             >
                               {day.completed && (
-                                <CheckCircle2 className="h-5 w-5 text-black" />
+                                <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-black" />
                               )}
                             </div>
-                            <span className="text-xs text-[#666666] font-medium">
+                            <span className="text-[10px] md:text-xs text-[#666666] font-medium">
                               {day.dayLabel}
                             </span>
                           </div>
@@ -370,23 +370,30 @@ export async function DashboardPage() {
                     </div>
 
                     {/* Stats row */}
-                    <div className="flex flex-wrap items-center gap-8">
+                    <div className="flex flex-wrap items-center gap-4 md:gap-8">
                       <div>
                         <p className="text-xs text-[#888888] uppercase tracking-widest mb-1">Day</p>
-                        <p className="text-3xl font-bold text-[#a3e635]">{streakCount + 1}</p>
+                        <p className="text-2xl md:text-3xl font-bold text-[#a3e635]">{streakCount + 1}</p>
                       </div>
-                      <div className="w-px h-12 bg-[#333333]" />
+                      <div className="w-px h-10 md:h-12 bg-[#333333]" />
                       <div>
                         <p className="text-xs text-[#888888] uppercase tracking-widest mb-1">Reward</p>
-                        <p className="text-3xl font-bold text-white">+{todayCheckInPoints} pts</p>
+                        <p className="text-2xl md:text-3xl font-bold text-white">+{todayCheckInPoints} pts</p>
                       </div>
-                      <div className="w-px h-12 bg-[#333333]" />
+                      <div className="hidden md:block w-px h-12 bg-[#333333]" />
+                      <div className="hidden md:block">
+                        <CountdownTimer />
+                      </div>
+                    </div>
+                    
+                    {/* Mobile countdown */}
+                    <div className="mt-4 md:hidden">
                       <CountdownTimer />
                     </div>
                   </div>
 
                   {/* RIGHT SIDE */}
-                  <div className="flex flex-col items-center justify-center p-8 lg:p-10 lg:border-l lg:border-[#333333]">
+                  <div className="flex flex-col items-center justify-center p-4 md:p-8 lg:p-10 border-t lg:border-t-0 lg:border-l border-[#333333]">
                     <CheckInButton hasCheckedIn={hasCheckedInToday} />
                     {!hasCheckedInToday && (
                       <p className="text-sm text-[#888888] mt-4 text-center">
@@ -411,14 +418,14 @@ export async function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {/* Daily Check-in Quest Card */}
               <Card className={`group transition-all duration-200 hover:-translate-y-2 border-2 ${
                 hasCheckedInToday 
                   ? "bg-[#111111] border-[#222222] hover:border-[#a3e635]" 
                   : "bg-[#0d1a00] border-[#a3e635]"
               } hover:shadow-[0_0_40px_rgba(163,230,53,0.2)]`}>
-                <CardContent className="p-10">
+                <CardContent className="p-6 md:p-10">
                   <div className="flex items-center justify-between mb-6">
                     <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
                       hasCheckedInToday 
@@ -449,7 +456,7 @@ export async function DashboardPage() {
                 { title: "Refer a Friend", desc: "Invite friends to join Moonquest" },
               ].map((quest, i) => (
                 <Card key={i} className="bg-[#111111] border-2 border-[#1a1a1a] opacity-60 hover:border-[#a3e635]/50 hover:opacity-80 transition-all duration-200">
-                  <CardContent className="p-10">
+                  <CardContent className="p-6 md:p-10">
                     <div className="flex items-center justify-between mb-6">
                       <span className="px-5 py-2 rounded-full bg-[#222222] text-[#666666] text-base font-bold uppercase">
                         Coming Soon
@@ -480,7 +487,7 @@ export async function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {(allRewards || []).map((reward, i) => {
                 const canAfford = pointsBalance >= reward.points_cost
                 const IconComponent = rewardIcons[i % rewardIcons.length]
@@ -495,7 +502,7 @@ export async function DashboardPage() {
                     }`}
                     style={{ animationDelay: `${i * 150}ms` }}
                   >
-                    <CardContent className="p-10">
+                    <CardContent className="p-6 md:p-10">
                       <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-6 ${
                         canAfford ? "bg-[#a3e635]/10" : "bg-[#222222]"
                       }`}>
@@ -543,7 +550,7 @@ export async function DashboardPage() {
                 <>
                   {[1, 2, 3].map((i) => (
                     <Card key={i} className="bg-[#111111] border-2 border-[#1a1a1a] opacity-60 hover:border-[#a3e635]/50 hover:opacity-80 transition-all duration-200">
-                      <CardContent className="p-10">
+                      <CardContent className="p-6 md:p-10">
                         <div className="w-20 h-20 rounded-2xl bg-[#222222] flex items-center justify-center mb-6">
                           <Gift className="h-10 w-10 text-[#555555]" />
                         </div>
