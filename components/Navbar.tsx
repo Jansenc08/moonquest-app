@@ -24,7 +24,7 @@ import {
   Home,
   LayoutDashboard,
 } from "lucide-react"
-import type { User } from "@supabase/supabase-js"
+import type { User, RealtimePostgresChangesPayload, AuthChangeEvent } from "@supabase/supabase-js"
 
 interface Profile {
   points_balance: number
@@ -36,17 +36,20 @@ export function Navbar() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [pointsFlash, setPointsFlash] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    const channelName = `profile-updates-${Date.now()}`
     let channel: ReturnType<typeof supabase.channel> | null = null
+    let isMounted = true
 
-    async function getUser() {
+    async function initialize() {
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser()
+      
+      if (!isMounted) return
       setUser(currentUser)
 
       if (currentUser) {
@@ -55,11 +58,11 @@ export function Navbar() {
           .select("points_balance, streak_count")
           .eq("id", currentUser.id)
           .single()
-        setProfile(profileData)
+        
+        if (isMounted) setProfile(profileData)
 
-        // Subscribe to real-time changes for this user's profile
         channel = supabase
-          .channel(channelName)
+          .channel(`profile-${currentUser.id}`)
           .on(
             "postgres_changes",
             {
@@ -68,37 +71,41 @@ export function Navbar() {
               table: "profiles",
               filter: `id=eq.${currentUser.id}`,
             },
-            (payload) => {
-              const newData = payload.new as Profile
-              setProfile({
-                points_balance: newData.points_balance,
-                streak_count: newData.streak_count,
-              })
+            (payload: RealtimePostgresChangesPayload<Profile>) => {
+              if (isMounted) {
+                const newData = payload.new as Profile
+                setProfile({
+                  points_balance: newData.points_balance,
+                  streak_count: newData.streak_count,
+                })
+                setPointsFlash(true)
+                setTimeout(() => setPointsFlash(false), 1000)
+              }
             }
           )
           .subscribe()
       }
-      setIsLoading(false)
-    }
 
-    getUser()
+      if (isMounted) setIsLoading(false)
+    }
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (!session?.user) {
-        setProfile(null)
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session) => {
+      if (isMounted) {
+        setUser(session?.user ?? null)
+        if (!session?.user) setProfile(null)
       }
     })
 
+    initialize()
+
     return () => {
+      isMounted = false
       subscription.unsubscribe()
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
+      if (channel) supabase.removeChannel(channel)
     }
-  }, [supabase])
+  }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -153,7 +160,9 @@ export function Navbar() {
                 <div className="flex items-center gap-6 px-6 py-3 rounded-full bg-[#111111] border border-[#222222]">
                   <div className="flex items-center gap-2.5">
                     <Coins className="h-6 w-6 text-[#a3e635]" />
-                    <span className="text-lg font-semibold text-white">
+                    <span className={`text-lg font-semibold transition-all duration-300 ${
+                      pointsFlash ? "text-[#a3e635] scale-110" : "text-white"
+                    }`}>
                       {profile?.points_balance ?? 0}
                     </span>
                   </div>
@@ -254,7 +263,9 @@ export function Navbar() {
                     <div className="flex gap-8 px-4">
                       <div className="flex items-center gap-2.5">
                         <Coins className="h-6 w-6 text-[#a3e635]" />
-                        <span className="text-lg font-semibold text-white">
+                        <span className={`text-lg font-semibold transition-all duration-300 ${
+                          pointsFlash ? "text-[#a3e635] scale-110" : "text-white"
+                        }`}>
                           {profile?.points_balance ?? 0}
                         </span>
                       </div>
