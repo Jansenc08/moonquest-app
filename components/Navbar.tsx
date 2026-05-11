@@ -40,19 +40,43 @@ export function Navbar() {
   const supabase = createClient()
 
   useEffect(() => {
+    const channelName = `profile-updates-${Date.now()}`
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
     async function getUser() {
       const {
-        data: { user },
+        data: { user: currentUser },
       } = await supabase.auth.getUser()
-      setUser(user)
+      setUser(currentUser)
 
-      if (user) {
-        const { data: profile } = await supabase
+      if (currentUser) {
+        const { data: profileData } = await supabase
           .from("profiles")
           .select("points_balance, streak_count")
-          .eq("id", user.id)
+          .eq("id", currentUser.id)
           .single()
-        setProfile(profile)
+        setProfile(profileData)
+
+        // Subscribe to real-time changes for this user's profile
+        channel = supabase
+          .channel(channelName)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${currentUser.id}`,
+            },
+            (payload) => {
+              const newData = payload.new as Profile
+              setProfile({
+                points_balance: newData.points_balance,
+                streak_count: newData.streak_count,
+              })
+            }
+          )
+          .subscribe()
       }
       setIsLoading(false)
     }
@@ -68,7 +92,12 @@ export function Navbar() {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
+    }
   }, [supabase])
 
   async function handleLogout() {
