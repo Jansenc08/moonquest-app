@@ -13,6 +13,7 @@ import {
   Coins,
   Headphones,
   Shirt,
+  Flame,
 } from "lucide-react"
 
 const featuredQuests = [
@@ -45,21 +46,18 @@ const featuredRewards = [
     description: "High-quality gaming headset",
     points: 5000,
     icon: Headphones,
-    image: "🎧",
   },
   {
     title: "Exclusive Hoodie",
     description: "Limited edition Moonquest merch",
     points: 3000,
     icon: Shirt,
-    image: "👕",
   },
   {
     title: "Gift Card $50",
     description: "Steam, PlayStation, or Xbox",
     points: 2500,
     icon: Gift,
-    image: "🎁",
   },
 ]
 
@@ -166,7 +164,7 @@ export default function LandingPage() {
                 <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 shadow-2xl">
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
-                      <span className="text-3xl">🔥</span>
+                      <Flame className="h-8 w-8 text-orange-500" />
                       <span className="font-semibold text-white text-lg">Daily Check-in</span>
                     </div>
                     <span className="px-3 py-1.5 rounded-full bg-[#a3e635]/10 text-sm font-medium text-[#a3e635]">
@@ -210,7 +208,7 @@ export default function LandingPage() {
               >
                 <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 shadow-2xl">
                   <div className="flex items-center gap-4 mb-4">
-                    <span className="text-3xl">🎁</span>
+                    <Gift className="h-8 w-8 text-[#a3e635]" />
                     <div>
                       <p className="font-semibold text-white text-base">Coffee Voucher</p>
                       <p className="text-[#a3e635] text-sm font-medium">100 pts</p>
@@ -373,8 +371,8 @@ export default function LandingPage() {
                 className="bg-[#111111] border-[#222222] hover:border-[#a3e635]/30 transition-colors"
               >
                 <CardContent className="p-6">
-                  <div className="h-32 flex items-center justify-center mb-6 rounded-lg bg-[#080808] text-5xl">
-                    {reward.image}
+                  <div className="h-32 flex items-center justify-center mb-6 rounded-lg bg-[#080808]">
+                    <reward.icon className="h-12 w-12 text-[#a3e635]" />
                   </div>
 
                   <h3 className="text-lg font-semibold text-white mb-1">

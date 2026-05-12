@@ -14,6 +14,7 @@ import {
   Gift,
   ArrowRight,
   CheckCircle2,
+  Check,
   Zap,
   Lock,
   Coffee,
@@ -264,8 +265,8 @@ export async function DashboardPage() {
                         <CheckCircle2 className="h-14 w-14 text-[#a3e635]" />
                         <span className="text-4xl text-[#a3e635] font-bold">Checked in!</span>
                       </div>
-                      <p className="text-2xl text-[#888888] mb-5">
-                        Come back tomorrow ✓
+                      <p className="text-2xl text-[#888888] mb-5 flex items-center gap-2">
+                        Come back tomorrow <Check className="h-6 w-6 text-[#a3e635]" />
                       </p>
                       <p className="text-xl text-[#a3e635] font-semibold">
                         +{pointsEarnedToday} pts earned today
@@ -464,12 +465,12 @@ export async function DashboardPage() {
               } hover:shadow-[0_0_40px_rgba(163,230,53,0.2)]`}>
                 <CardContent className="p-6 md:p-10">
                   <div className="flex items-center justify-between mb-6">
-                    <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
+                    <span className={`px-5 py-2 rounded-full text-base font-bold uppercase flex items-center gap-1.5 ${
                       hasCheckedInToday 
                         ? "bg-[#a3e635]/20 text-[#a3e635]" 
                         : "bg-[#a3e635]/20 text-[#a3e635]"
                     }`}>
-                      {hasCheckedInToday ? "✓ Done" : "Active"}
+                      {hasCheckedInToday ? <><Check className="h-4 w-4" /> Done</> : "Active"}
                     </span>
                     <span className="text-xl font-bold text-[#a3e635]">
                       +{hasCheckedInToday ? pointsEarnedToday : todayCheckInPoints} pts
@@ -479,7 +480,8 @@ export async function DashboardPage() {
                   <p className="text-lg text-[#666666] mb-6">Check in daily to earn points and build your streak</p>
                   {hasCheckedInToday ? (
                     <Button disabled className="w-full bg-[#222222] text-[#666666] cursor-not-allowed text-lg py-4 h-auto">
-                      ✓ Completed
+                      <Check className="h-5 w-5 mr-2" />
+                      Completed
                     </Button>
                   ) : (
                     <CheckInButton hasCheckedIn={false} compact fullWidth />

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { checkIn } from "./actions"
-import { CheckCircle2, Loader2 } from "lucide-react"
+import { CheckCircle2, Loader2, Flame } from "lucide-react"
 
 interface CheckInButtonProps {
   hasCheckedIn: boolean
@@ -55,7 +55,7 @@ export function CheckInButton({ hasCheckedIn, compact, fullWidth }: CheckInButto
         {result ? (
           <div className="mb-4">
             <p className="text-[#a3e635] font-bold text-xl">+{result.pointsEarned} pts earned!</p>
-            <p className="text-sm text-[#888888]">Day {result.newStreak} streak 🔥</p>
+            <p className="text-sm text-[#888888] flex items-center justify-center gap-1">Day {result.newStreak} streak <Flame className="h-4 w-4 text-orange-500" /></p>
           </div>
         ) : null}
         <div className="flex items-center justify-center gap-2 text-[#888888]">

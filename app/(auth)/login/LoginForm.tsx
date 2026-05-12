@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Gamepad2, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Gamepad2, Mail, Lock, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react"
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -355,8 +355,9 @@ export function LoginForm() {
 
         {/* Back to Home */}
         <p className="mt-8 text-center text-sm">
-          <Link href="/" className="text-[#666666] hover:text-white transition-colors">
-            ← Back to Home
+          <Link href="/" className="text-[#666666] hover:text-white transition-colors inline-flex items-center gap-1.5">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
           </Link>
         </p>
       </div>

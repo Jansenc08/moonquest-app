@@ -12,6 +12,7 @@ import {
   Coins,
   Flame,
   CheckCircle2,
+  Check,
   Lock,
   Share2,
   Users,
@@ -286,12 +287,12 @@ export function QuestsPageClient({
           >
             <CardContent className="p-6 md:p-10 flex flex-col h-full">
               <div className="flex items-center justify-between mb-6">
-                <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
+                <span className={`px-5 py-2 rounded-full text-base font-bold uppercase flex items-center gap-1.5 ${
                   initialHasCheckedInToday 
                     ? "bg-[#a3e635]/20 text-[#a3e635]" 
                     : "bg-[#a3e635]/20 text-[#a3e635]"
                 }`}>
-                  {initialHasCheckedInToday ? "✓ Done" : "Active"}
+                  {initialHasCheckedInToday ? <><Check className="h-4 w-4" /> Done</> : "Active"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-[#a3e635]">
@@ -320,7 +321,8 @@ export function QuestsPageClient({
               </p>
               {initialHasCheckedInToday ? (
                 <Button disabled className="w-full bg-[#222222] text-[#888888] cursor-not-allowed text-base font-bold h-[52px] rounded-lg">
-                  ✓ Completed Today
+                  <Check className="h-5 w-5 mr-2" />
+                  Completed Today
                 </Button>
               ) : (
                 <CheckInButton hasCheckedIn={false} compact fullWidth />
@@ -339,12 +341,12 @@ export function QuestsPageClient({
           >
             <CardContent className="p-6 md:p-10 flex flex-col h-full">
               <div className="flex items-center justify-between mb-6">
-                <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
+                <span className={`px-5 py-2 rounded-full text-base font-bold uppercase flex items-center gap-1.5 ${
                   hasSpunToday 
                     ? "bg-[#a3e635]/20 text-[#a3e635]" 
                     : "bg-[#a3e635]/20 text-[#a3e635]"
                 }`}>
-                  {hasSpunToday ? "✓ Done" : "Active"}
+                  {hasSpunToday ? <><Check className="h-4 w-4" /> Done</> : "Active"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-[#a3e635]">Up to +100 pts</span>
@@ -398,12 +400,12 @@ export function QuestsPageClient({
           >
             <CardContent className="p-6 md:p-10 flex flex-col h-full">
               <div className="flex items-center justify-between mb-6">
-                <span className={`px-5 py-2 rounded-full text-base font-bold uppercase ${
+                <span className={`px-5 py-2 rounded-full text-base font-bold uppercase flex items-center gap-1.5 ${
                   hasConnectedWallet 
                     ? "bg-[#a3e635]/20 text-[#a3e635]" 
                     : "bg-[#a3e635]/20 text-[#a3e635]"
                 }`}>
-                  {hasConnectedWallet ? "✓ Done" : "Active"}
+                  {hasConnectedWallet ? <><Check className="h-4 w-4" /> Done</> : "Active"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-[#a3e635]">+{walletQuestPoints} pts</span>
