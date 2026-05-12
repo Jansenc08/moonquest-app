@@ -3,6 +3,7 @@
 A gamified Web3 rewards platform that turns everyday actions into earning opportunities. Users complete quests, build streaks, and redeem points for real rewards.
 
 **Live Demo:** https://moonquest-app.vercel.app  
+**Repository:** https://github.com/Jansenc08/moonquest-app
 
 ---
 
@@ -116,7 +117,8 @@ The platform combines traditional Web2 authentication with optional Web3 wallet 
 
 ### 1. Next.js App Router with Server Components
 
-All page data fetching happens server-side in `page.tsx` files. Client components receive data as props and handle only interactivity. Pages render with complete data on first load — no loading spinners, no client-side fetches on mount.
+All page data fetching happens server-side in `page.tsx` files. Client components receive data as props and handle only interactivity. During server-side data fetching, a shared LoadingSpinner component is shown via Next.js loading.tsx 
+conventions — ensuring a consistent loading experience across all pages without any client-side data fetching on mount.
 
 ### 2. Supabase as Full Backend
 
@@ -141,10 +143,6 @@ Wallet connection is additive — the app is fully functional without a wallet. 
 ### 7. Atomic Stock Decrement
 
 Reward stock is decremented using a PostgreSQL function (`decrement_stock`) with `SECURITY DEFINER` privileges rather than a client-side read-modify-write pattern. This prevents race conditions where two simultaneous redemptions could both read the same stock value and only decrement once. The database handles the math atomically, ensuring stock counts are always accurate regardless of concurrent requests.
-
-### 8. Shared Loading Component
-
-All page loading states use a single shared `LoadingSpinner` component in `/components/LoadingSpinner.tsx`. Each page's `loading.tsx` imports and renders this component — one source of truth for the loading UI, consistent across all pages, and easy to update in one place.
 
 ---
 
@@ -285,7 +283,6 @@ moonquest-app/
 │   │   └── login/
 │   ├── api/
 │   │   ├── quests/
-│   │   │   ├── checkin/route.ts
 │   │   │   ├── spin/route.ts
 │   │   │   ├── claim-mission/route.ts
 │   │   │   └── connect-wallet/route.ts
