@@ -183,11 +183,13 @@ export function Navbar() {
                 />
 
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-11 w-11 border-2 border-[#333333]">
-                    <AvatarFallback className="bg-[#222222] text-white text-lg font-medium">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <Link href="/profile" className="cursor-pointer">
+                    <Avatar className="h-11 w-11 border-2 border-[#333333] hover:border-[#a3e635] transition-colors">
+                      <AvatarFallback className="bg-[#222222] text-white text-lg font-medium">
+                        {user.email?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -253,19 +255,24 @@ export function Navbar() {
               <div className="mt-8 border-t border-[#222222] pt-8">
                 {user ? (
                   <div className="space-y-6">
-                    <div className="flex items-center gap-4 px-4">
-                      <Avatar className="h-14 w-14 border-2 border-[#333333]">
-                        <AvatarFallback className="bg-[#222222] text-white text-xl font-medium">
-                          {user.email?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-lg font-medium text-white">
-                          {user.email?.split("@")[0]}
-                        </p>
-                        <p className="text-base text-[#666666]">{user.email}</p>
-                      </div>
-                    </div>
+                    
+                 <Link 
+  href="/profile" 
+  onClick={() => setIsOpen(false)}
+  className="flex items-center gap-4 px-4 hover:opacity-80 transition-opacity"
+>
+  <Avatar className="h-14 w-14 border-2 border-[#333333] hover:border-[#a3e635] transition-colors">
+    <AvatarFallback className="bg-[#222222] text-white text-xl font-medium">
+      {user.email?.charAt(0).toUpperCase()}
+    </AvatarFallback>
+  </Avatar>
+  <div>
+    <p className="text-lg font-medium text-white">
+      {user.email?.split("@")[0]}
+    </p>
+    <p className="text-base text-[#666666]">{user.email}</p>
+  </div>
+</Link>
 
                     <div className="flex gap-8 px-4">
                       <div className="flex items-center gap-2.5">
