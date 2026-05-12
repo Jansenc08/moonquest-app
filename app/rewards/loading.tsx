@@ -1,5 +1,5 @@
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 
-export default function DashboardLoading() {
+export default function RewardsLoading() {
   return <LoadingSpinner />
 }

@@ -41,8 +41,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check stock (stock = -1 means unlimited)
-    if (reward.stock === 0) {
+    // Check stock (null = unlimited)
+    if (reward.stock !== null && reward.stock === 0) {
       return NextResponse.json(
         { error: "Out of stock" },
         { status: 400 }
@@ -108,12 +108,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Decrement stock if not unlimited (-1)
-    if (reward.stock !== null && reward.stock !== -1) {
-      await supabase
-        .from("rewards")
-        .update({ stock: reward.stock - 1 })
-        .eq("id", reward.id)
+    // Decrement stock if not unlimited (null = unlimited)
+    if (reward.stock !== null) {
+      const { error: stockError } = await supabase
+        .rpc('decrement_stock', { reward_id_input: reward_id })
+
+      if (stockError) {
+        console.error('Failed to decrement stock:', stockError)
+      }
     }
 
     return NextResponse.json({

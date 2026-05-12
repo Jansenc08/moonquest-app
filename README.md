@@ -25,12 +25,15 @@ The platform combines traditional Web2 authentication with optional Web3 wallet 
 | Daily spin wheel | Randomized bonus points with weighted outcomes |
 | Monthly missions | Time-bound goals with claimable rewards |
 | Rewards storefront | Browse redeemable items with costs and stock |
-| Tabbed rewards store | Three category tabs (Featured, Web3, NFTs) with filtered card views and category-specific redemption flows |
+| Tabbed rewards store | Featured, Web3, and NFT reward categories with filtered tab navigation and category-specific redemption flows |
 | Points redemption | Full flow with balance validation and stock management |
 | Real-time points display | Live updates via Supabase Realtime |
 | Web3 wallet connection | Optional RainbowKit integration for wallet linking |
 | Leaderboard | Competitive ranking across all users |
-| Profile page | Points ledger, stats, and account management |
+| Profile page | Points ledger with running balance, leaderboard rank, wallet address, and account management |
+| Loading states | Shared LoadingSpinner component used across all pages (dashboard, quests, rewards, profile) |
+| Out of stock handling | Rewards with zero stock show Sold Out state with red indicator and disabled button |
+| Atomic stock decrement | Stock decremented via PostgreSQL SECURITY DEFINER function to prevent race conditions |
 
 ---
 
@@ -90,9 +93,10 @@ The platform combines traditional Web2 authentication with optional Web3 wallet 
 - Tabbed storefront: Featured (physical rewards), Web3 (wallet-gated drops), NFTs (exclusive collectibles)
 - Modal with live balance check before confirmation
 - Blocks redemption if `points_balance < points_cost`
+- Out of stock rewards (stock === 0) show a Sold Out state and cannot be redeemed
 - Category-aware CTAs: "Redeem" / "Mint to Wallet" / "Claim NFT"
 - Web3 and NFT rewards require a connected wallet address
-- On success: deducts points, inserts redemption record, decrements stock
+- On success: deducts points, inserts redemption record, decrements stock atomically via SQL function
 - NFT redemption shows airdrop confirmation message
 
 ### Wallet Connection
@@ -134,6 +138,14 @@ Quests use a `type` field (`daily_checkin`, `wallet_connect`, `monthly_mission`,
 
 Wallet connection is additive — the app is fully functional without a wallet. RainbowKit handles multi-wallet support and connection state. The wallet address is persisted to `profiles` so it survives auth sessions.
 
+### 7. Atomic Stock Decrement
+
+Reward stock is decremented using a PostgreSQL function (`decrement_stock`) with `SECURITY DEFINER` privileges rather than a client-side read-modify-write pattern. This prevents race conditions where two simultaneous redemptions could both read the same stock value and only decrement once. The database handles the math atomically, ensuring stock counts are always accurate regardless of concurrent requests.
+
+### 8. Shared Loading Component
+
+All page loading states use a single shared `LoadingSpinner` component in `/components/LoadingSpinner.tsx`. Each page's `loading.tsx` imports and renders this component — one source of truth for the loading UI, consistent across all pages, and easy to update in one place.
+
 ---
 
 ## Database Schema
@@ -173,6 +185,7 @@ rewards (
   description text,
   points_cost int,
   stock int,                          -- NULL means unlimited
+                                      -- Decremented via decrement_stock() SQL function
   image_url text,
   category text DEFAULT 'featured',   -- 'featured' | 'web3' | 'nft'
   is_active boolean DEFAULT true,
@@ -199,6 +212,14 @@ redemptions (
 | `/api/quests/claim-mission` | POST | Claim monthly mission reward |
 | `/api/quests/connect-wallet` | POST | Save wallet address, award one-time points |
 | `/api/rewards/redeem` | POST | Redeem reward, deduct points, decrement stock |
+
+---
+
+## Database Functions
+
+| Function | Description |
+|----------|-------------|
+| `decrement_stock(reward_id_input uuid)` | Atomically decrements reward stock by 1. Runs with SECURITY DEFINER to bypass RLS. Only decrements if stock is not null and greater than 0. Called via Supabase RPC on every successful redemption. |
 
 ---
 
@@ -264,32 +285,40 @@ moonquest-app/
 │   │   └── login/
 │   ├── api/
 │   │   ├── quests/
+│   │   │   ├── checkin/route.ts
 │   │   │   ├── spin/route.ts
 │   │   │   ├── claim-mission/route.ts
 │   │   │   └── connect-wallet/route.ts
 │   │   └── rewards/
 │   │       └── redeem/route.ts
 │   ├── dashboard/
-│   │   ├── actions.ts
-│   │   └── ...
+│   │   ├── loading.tsx
+│   │   └── page.tsx
 │   ├── profile/
+│   │   ├── loading.tsx
+│   │   ├── page.tsx
+│   │   └── ProfilePageClient.tsx
 │   ├── quests/
+│   │   ├── loading.tsx
+│   │   └── page.tsx
 │   ├── rewards/
+│   │   ├── loading.tsx
+│   │   ├── page.tsx
+│   │   └── RewardsPageClient.tsx
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components/
 │   ├── quests/
 │   ├── rewards/
 │   ├── ui/
+│   ├── LoadingSpinner.tsx
 │   ├── Navbar.tsx
 │   └── Web3Provider.tsx
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts
-│   │   ├── server.ts
-│   │   └── types.ts
-│   ├── auth.ts
-│   └── utils.ts
+│   └── supabase/
+│       ├── client.ts
+│       ├── server.ts
+│       └── types.ts
 └── README.md
 ```
 

@@ -111,8 +111,13 @@ function getRewardIcon(title: string, category: string): LucideIcon {
 
 function getStockDisplay(stock: number | null): React.ReactNode {
   if (stock === null) return "Unlimited"
+  if (stock === 0) return <span style={{ color: "#ef4444", fontWeight: "bold" }}>Sold Out</span>
   if (stock > 5) return `${stock} in stock`
   return <span style={{ color: "#f97316" }}>{stock} left</span>
+}
+
+function isOutOfStock(stock: number | null): boolean {
+  return stock !== null && stock === 0
 }
 
 export function RewardsPageClient({
@@ -125,11 +130,12 @@ export function RewardsPageClient({
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isRedeeming, setIsRedeeming] = useState(false)
+  const [rewardsList, setRewardsList] = useState(rewards)
 
   const visibleRewards =
     activeTab === "all"
-      ? rewards
-      : rewards.filter((r) => r.category === activeTab)
+      ? rewardsList
+      : rewardsList.filter((r) => r.category === activeTab)
 
   async function handleRedeem() {
     if (!selectedReward) return
@@ -150,6 +156,13 @@ export function RewardsPageClient({
       }
 
       setPointsBalance((prev) => prev - selectedReward.points_cost)
+      setRewardsList((prev) =>
+        prev.map((r) =>
+          r.id === selectedReward.id && r.stock !== null
+            ? { ...r, stock: r.stock - 1 }
+            : r
+        )
+      )
       setIsModalOpen(false)
       setSelectedReward(null)
 
@@ -171,7 +184,8 @@ export function RewardsPageClient({
     return "Confirm Redemption"
   }
 
-  function getButtonLabel(category: string, isLocked: boolean): string {
+  function getButtonLabel(category: string, isLocked: boolean, stock: number | null): string {
+    if (isOutOfStock(stock)) return "Sold Out"
     if (isLocked) return "Locked"
     if (category === "web3")
       return walletAddress ? "Mint" : "Connect Wallet First"
@@ -182,8 +196,12 @@ export function RewardsPageClient({
 
   function getButtonStyles(
     category: string,
-    isLocked: boolean
+    isLocked: boolean,
+    stock: number | null
   ): React.CSSProperties {
+    if (isOutOfStock(stock)) {
+      return { background: "#1a1a1a", color: "#ef4444", border: "1px solid #ef444440", cursor: "not-allowed" }
+    }
     if (isLocked) {
       return { background: "#1a1a1a", color: "#333", cursor: "not-allowed" }
     }
@@ -203,7 +221,8 @@ export function RewardsPageClient({
     return { background: "#a3e635", color: "#000" }
   }
 
-  function isButtonDisabled(category: string, isLocked: boolean): boolean {
+  function isButtonDisabled(category: string, isLocked: boolean, stock: number | null): boolean {
+    if (isOutOfStock(stock)) return true
     if (isLocked) return true
     if ((category === "web3" || category === "nft") && !walletAddress)
       return true
@@ -280,6 +299,8 @@ export function RewardsPageClient({
             const isNft = reward.category === "nft"
             const rarity = getRarity(reward.points_cost)
             const rarityColors = getRarityColors(rarity)
+            const soldOut = isOutOfStock(reward.stock)
+            const stripeColor = soldOut ? "#ef4444" : categoryColor
 
             return (
               <div
@@ -290,7 +311,7 @@ export function RewardsPageClient({
                   border: "1px solid rgba(255,255,255,0.15)",
                 }}
                 onClick={() => {
-                  if (!isButtonDisabled(reward.category, isLocked)) {
+                  if (!isButtonDisabled(reward.category, isLocked, reward.stock)) {
                     openModal(reward)
                   }
                 }}
@@ -298,7 +319,7 @@ export function RewardsPageClient({
                 {/* CATEGORY TOP STRIPE */}
                 <div
                   className="absolute top-0 left-0 right-0 h-[2px]"
-                  style={{ background: categoryColor }}
+                  style={{ background: stripeColor }}
                 />
 
                 <div className="p-6 md:p-10 flex flex-col flex-1">
@@ -309,7 +330,9 @@ export function RewardsPageClient({
                         e.stopPropagation()
                         openModal(reward)
                       }}
-                      className="w-[22px] h-[22px] rounded-full bg-[#1a1a1a] border border-[#333] text-[#666] text-[11px] font-bold flex items-center justify-center hover:bg-[#a3e635] hover:border-[#a3e635] hover:text-black transition-all duration-200"
+                      className={`w-[22px] h-[22px] rounded-full bg-[#1a1a1a] border border-[#333] text-[#666] text-[11px] font-bold flex items-center justify-center transition-all duration-200 ${
+                        soldOut ? "" : "hover:bg-[#a3e635] hover:border-[#a3e635] hover:text-black"
+                      }`}
                     >
                       ?
                     </button>
@@ -375,17 +398,17 @@ export function RewardsPageClient({
                       )}
                     </div>
                     <button
-                      className="flex-shrink-0 text-base font-bold px-6 h-[52px] rounded-lg border-none cursor-pointer transition-opacity hover:opacity-85"
-                      style={getButtonStyles(reward.category, isLocked)}
+                      className="flex-shrink-0 text-base font-bold px-6 h-[52px] rounded-lg cursor-pointer transition-opacity hover:opacity-85"
+                      style={getButtonStyles(reward.category, isLocked, reward.stock)}
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (!isButtonDisabled(reward.category, isLocked)) {
+                        if (!isButtonDisabled(reward.category, isLocked, reward.stock)) {
                           openModal(reward)
                         }
                       }}
-                      disabled={isButtonDisabled(reward.category, isLocked)}
+                      disabled={isButtonDisabled(reward.category, isLocked, reward.stock)}
                     >
-                      {getButtonLabel(reward.category, isLocked)}
+                      {getButtonLabel(reward.category, isLocked, reward.stock)}
                     </button>
                   </div>
                 </div>
@@ -492,20 +515,27 @@ export function RewardsPageClient({
                   isRedeeming ||
                   isButtonDisabled(
                     selectedReward.category,
-                    pointsBalance < selectedReward.points_cost
+                    pointsBalance < selectedReward.points_cost,
+                    selectedReward.stock
                   )
                 }
-                className="w-full py-4 rounded-xl font-bold text-base transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[56px]"
-                style={{
-                  background: getCategoryColor(selectedReward.category),
-                  color: selectedReward.category === "web3" ? "#fff" : "#000",
-                }}
+                className="w-full py-4 rounded-xl font-bold text-base transition-opacity hover:opacity-90 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[56px]"
+                style={
+                  isOutOfStock(selectedReward.stock)
+                    ? { background: "#1a1a1a", color: "#ef4444", border: "1px solid #ef444440" }
+                    : {
+                        background: getCategoryColor(selectedReward.category),
+                        color: selectedReward.category === "web3" ? "#fff" : "#000",
+                      }
+                }
               >
                 {isRedeeming ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
                     Processing...
                   </>
+                ) : isOutOfStock(selectedReward.stock) ? (
+                  "Sold Out"
                 ) : (
                   getCtaLabel(selectedReward.category)
                 )}
