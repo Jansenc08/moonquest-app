@@ -3,7 +3,6 @@
 A gamified Web3 rewards platform that turns everyday actions into earning opportunities. Users complete quests, build streaks, and redeem points for real rewards.
 
 **Live Demo:** https://moonquest-app.vercel.app  
-**Repository:** https://github.com/Jansenc08/moonquest-app
 
 ---
 
@@ -26,6 +25,7 @@ The platform combines traditional Web2 authentication with optional Web3 wallet 
 | Daily spin wheel | Randomized bonus points with weighted outcomes |
 | Monthly missions | Time-bound goals with claimable rewards |
 | Rewards storefront | Browse redeemable items with costs and stock |
+| Tabbed rewards store | Three category tabs (Featured, Web3, NFTs) with filtered card views and category-specific redemption flows |
 | Points redemption | Full flow with balance validation and stock management |
 | Real-time points display | Live updates via Supabase Realtime |
 | Web3 wallet connection | Optional RainbowKit integration for wallet linking |
@@ -87,9 +87,13 @@ The platform combines traditional Web2 authentication with optional Web3 wallet 
 
 ### Reward Redemption
 
+- Tabbed storefront: Featured (physical rewards), Web3 (wallet-gated drops), NFTs (exclusive collectibles)
 - Modal with live balance check before confirmation
 - Blocks redemption if `points_balance < points_cost`
+- Category-aware CTAs: "Redeem" / "Mint to Wallet" / "Claim NFT"
+- Web3 and NFT rewards require a connected wallet address
 - On success: deducts points, inserts redemption record, decrements stock
+- NFT redemption shows airdrop confirmation message
 
 ### Wallet Connection
 
@@ -168,8 +172,9 @@ rewards (
   title text,
   description text,
   points_cost int,
-  stock int,
+  stock int,                          -- NULL means unlimited
   image_url text,
+  category text DEFAULT 'featured',   -- 'featured' | 'web3' | 'nft'
   is_active boolean DEFAULT true,
   created_at timestamptz
 )
