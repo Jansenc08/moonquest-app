@@ -7,14 +7,6 @@ A gamified Web3 rewards platform that turns everyday actions into earning opport
 
 ---
 
-## Overview
-
-Moonquest addresses the engagement problem in loyalty and rewards programs — users sign up, forget about them, and never return. By borrowing mechanics from gaming (daily streaks, spin wheels, progress tracking, leaderboards), Moonquest creates a habit loop that keeps users coming back.
-
-The platform combines traditional Web2 authentication with optional Web3 wallet connectivity, positioning it for both mainstream users and crypto-native audiences.
-
----
-
 ## Features
 
 | Feature | Description |
